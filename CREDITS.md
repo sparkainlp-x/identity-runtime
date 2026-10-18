@@ -13,9 +13,20 @@
 
 The photograph is public domain and is not covered by this repository's AGPL-3.0-only licence. It is not an AI-generated image.
 
+## AI-generated portrait
+
+`site/assets/tesla-ai-portrait-512.jpg` is shown on `talk.html` as a still image.
+
+- What it is: an AI-generated, photorealistic black-and-white portrait in the likeness of Nikola Tesla. It is not a photograph and does not show a real sitting.
+- Source: provided by the author, Jean-François Brisson (Spark AI NLP), on 2026-10-18.
+- Provenance: the original 1408 x 1408 file carried C2PA Content Credentials whose claim names Grok Imagine as the generator and records the IPTC digital source type `trainedAlgorithmicMedia`. The credentials were signed with a self-signed certificate, so they are a record from the generating tool, not an independent verification.
+- Changes: converted to greyscale and resized to 512 x 512 for the page. Re-encoding drops the original C2PA manifest, so the copy carries an XMP record with the same IPTC digital source type (`trainedAlgorithmicMedia`) and a description saying it is AI-generated.
+- Use on the page: shown still, labelled as AI-generated, and never animated. No lip sync, morphing or overlay is applied to the face. Only the frame around the image glows while the guide speaks.
+- Rights: provided by the author for use in this repository. It is included on the author's terms. This file does not make any claim beyond that about rights in AI-generated images.
+
 ## Illustrated character
 
-The talking figure on `talk.html` is an original SVG cartoon drawn by hand for this project (a stylised 1890s inventor). It is not traced from, generated from or animated from the photograph above, and it is covered by the repository licence.
+The talking figure on `talk.html` is an original SVG cartoon drawn by hand for this project (a stylised 1890s inventor). It is not traced from, generated from or animated from either portrait above (the AI portrait was used only as a loose style reference for the hair, collar and face shape), and it is covered by the repository licence.
 
 ## Scripted answers
 

@@ -296,6 +296,27 @@ def test_voice_controls_and_note_present(site):
     assert "voiceschanged" in page and "pointerdown" in page
 
 
+def test_ai_portrait_is_labelled_still_and_never_animated(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    assert (site / "assets" / "tesla-ai-portrait-512.jpg").stat().st_size < 80_000
+    img = re.search(r'<img id="aiPortrait"[^>]*>', page).group(0)
+    assert 'src="assets/tesla-ai-portrait-512.jpg"' in img and "AI-generated" in img
+    assert "class=" not in img and "style=" not in img
+    assert "AI-generated portrait in the likeness of Nikola Tesla, supplied by the project author. Not a photograph. Not animated." in page
+    script = page.split("<script>")[1]
+    assert "aiPortrait" not in script  # JavaScript never touches the portrait image
+    style = re.search(r"<style>(.*?)</style>", page, re.S).group(1)
+    for rule in re.findall(r"([^{}]+)\{([^{}]*)\}", style):
+        sel, body = rule
+        if "aiPortrait" in sel or ".pframe img" in sel:
+            assert not re.search(r"transform|animation|filter|mix-blend|clip-path|mask", body), sel
+    # the glow sits behind the image (lower z-index) so nothing is drawn over the face
+    assert re.search(r"\.pglow\{[^}]*z-index:0", style) and re.search(r"\.pframe img\{[^}]*z-index:1", style)
+    for word in ["lip", "mouth", "viseme", "morph", "warp", "face"]:
+        assert word not in img.lower().replace("likeness", ""), word
+    assert b"trainedAlgorithmicMedia" in (ROOT / "site" / "assets" / "tesla-ai-portrait-512.jpg").read_bytes()
+
+
 def _luminance(hex_colour):
     h = hex_colour.lstrip("#")
     if len(h) == 3:

@@ -28,6 +28,14 @@ header h1{margin:0;font-size:1.45rem;color:var(--gold);font-weight:650}
 .stage .label{font-size:.76rem;color:var(--muted);margin:.45rem .2rem 0}
 #voiceNote{border-left:3px solid var(--gold);padding-left:.5rem}
 .stage .label b{color:var(--gold);font-weight:600}
+.duo{display:grid;gap:.8rem}
+@media (max-width:860px){.duo{grid-template-columns:1fr 1fr;gap:.6rem;align-items:start}.duo .card{padding:.45rem}.stage svg{max-width:none}}
+.portrait h2{margin-bottom:.45rem}
+.pframe{position:relative;border-radius:.45rem}
+.pframe img{position:relative;z-index:1;display:block;width:100%;height:auto;border-radius:.45rem;background:#000}
+.pglow{position:absolute;inset:-5px;z-index:0;border-radius:.7rem;box-shadow:0 0 0 2px rgba(201,168,76,.85),0 0 22px 6px rgba(79,209,232,.55);opacity:0;pointer-events:none}
+.plabel{font-size:.76rem;color:var(--muted);margin:.5rem .1rem 0}
+.plabel b{color:var(--gold);font-weight:600}
 .photo{display:flex;gap:.6rem;align-items:flex-start;margin-top:.8rem}
 .photo img{width:4.6rem;height:auto;border-radius:.3rem;filter:grayscale(1) sepia(.15);flex:none}
 .photo p{margin:0;font-size:.74rem;color:var(--muted)}
@@ -99,8 +107,14 @@ body.still .msg{animation:none}
 <main>
   <div class="layout">
     <aside>
+     <div class="duo">
+      <section class="card portrait" aria-labelledby="hPortrait">
+        <h2 id="hPortrait">Portrait</h2>
+        <div class="pframe"><div class="pglow" id="pglow" aria-hidden="true"></div><img id="aiPortrait" src="assets/tesla-ai-portrait-512.jpg" width="512" height="512" alt="AI-generated black-and-white portrait in the likeness of Nikola Tesla: a man with dark centre-parted hair, a moustache, a high white collar and a dark suit."></div>
+        <p class="plabel"><b>AI-generated portrait in the likeness of Nikola Tesla, supplied by the project author. Not a photograph. Not animated.</b> The original file's Content Credentials record it as AI-generated. The talking guide is a separate illustration.</p>
+      </section>
       <section class="card stage" aria-labelledby="hAvatar">
-        <h2 id="hAvatar" class="sr">Illustrated guide</h2>
+        <h2 id="hAvatar">Talking guide</h2>
         <svg id="avatar" viewBox="0 0 320 360" role="img" aria-labelledby="avTitle avDesc">
           <title id="avTitle">Illustrated character: a stylised 1890s inventor</title>
           <desc id="avDesc">A hand-drawn cartoon of a fictional guide with centre-parted dark hair, a moustache, a high white collar and a dark suit, standing in front of a small laboratory coil. Its mouth moves while answers are read aloud. It is an original illustration, not a likeness of a real photograph.</desc>
@@ -192,7 +206,10 @@ body.still .msg{animation:none}
           </g>
         </svg>
         <p class="label"><b>Illustrated character, not a likeness of a real photo.</b> An original cartoon drawn for this page. The lips follow the words being read; the coil's arcs follow the estimated mouth opening, not measured sound.</p>
-        <div class="photo">
+      </section>
+     </div>
+      <section class="card photo-card" style="margin-top:.8rem" aria-label="Historical photo">
+        <div class="photo" style="margin-top:0">
           <img src="assets/tesla-sarony-c1890.jpg" width="500" height="670" alt="Black-and-white studio portrait of the historical Nikola Tesla, about age 34, photographed by Napoleon Sarony around 1890.">
           <p><b>Historical photo</b>The real Nikola Tesla, about age 34. Photograph by Napoleon Sarony, c. 1890. Public domain (copyright expired), via <a href="https://commons.wikimedia.org/wiki/File:Tesla_circa_1890.jpeg">Wikimedia Commons</a>. Not animated and not the guide.</p>
         </div>
@@ -343,7 +360,7 @@ var THRESH=2;
 
 /* ---- avatar ---- */
 var NS="http://www.w3.org/2000/svg";
-var el={mouth:$("mouth"),inner:$("mouthInner"),clip:$("mouthClip"),teeth:$("teeth"),lip:$("lipLine"),stache:$("stache"),browL:$("browL"),browR:$("browR"),eyeL:$("eyeL"),eyeR:$("eyeR"),lidL:$("lidL"),lidR:$("lidR"),head:$("head"),arcs:$("arcs"),glow:$("coilGlow"),svg:$("avatar")};
+var el={mouth:$("mouth"),inner:$("mouthInner"),clip:$("mouthClip"),teeth:$("teeth"),lip:$("lipLine"),stache:$("stache"),browL:$("browL"),browR:$("browR"),eyeL:$("eyeL"),eyeR:$("eyeR"),lidL:$("lidL"),lidR:$("lidR"),head:$("head"),arcs:$("arcs"),glow:$("coilGlow"),svg:$("avatar"),pglow:$("pglow")};
 var KEYS=["w","open","up","round","teeth"];
 function shape(n){return VIS.shapes[n]||VIS.shapes.rest;}
 var A={cur:Object.assign({},VIS.shapes.rest),target:VIS.shapes.rest,forced:null,
@@ -399,6 +416,7 @@ function frame(now){
   A.volT=(A.speaking||A.forced)?Math.min(1,.2+A.cur.open/14*.8):0;
   A.vol=ease(A.vol,A.volT,dt,80);
   var level=reduce?0:Math.max(A.vol,now<A.flashUntil?.35:0);
+  el.pglow.style.opacity=reduce?((A.speaking||A.forced)?".6":"0"):f1(Math.min(1,A.vol*1.1));
   el.arcs.setAttribute("opacity",level>.02?"1":"0");el.glow.setAttribute("opacity",f1(.08+level*.55));
   if(level>.02&&now-A.arcAt>85){A.arcAt=now;drawArcs(level);}
   if(level>.02||A.vol>.01)moving=true;
