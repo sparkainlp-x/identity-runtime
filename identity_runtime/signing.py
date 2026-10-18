@@ -6,6 +6,11 @@ token computed with that approver's secret key over exactly what is being
 approved. A token for one manifest, module or action does not verify for
 another.
 
+Tokens that could otherwise recur are made single use: module approvals bind
+the upload (proposal) instance, lease grants and rollbacks bind a nonce that
+the runtime records, and halt resets bind the specific halt. Held-action
+approvals bind the action id, which can only be approved once.
+
 These are shared-secret MACs, not public-key signatures: whoever holds the
 keyring can create tokens for every approver in it. Keep the keyring outside
 the avatar's reach.
@@ -37,6 +42,25 @@ def verify(key: bytes, token: str | None, kind: str, avatar_id: str, subject: st
         return False
     expected = sign(key, kind, avatar_id, subject, detail, approver)
     return hmac.compare_digest(expected, token)
+
+
+def module_detail(module: str, proposal_id: str) -> str:
+    """Detail string for a module approval: binds the module to one upload (proposal) instance."""
+    return canonical_json({"module": module, "proposal_id": proposal_id})
+
+
+def lease_detail(terms: dict, nonce: str) -> str:
+    """Detail string for a lease grant: the full effective lease terms plus a single-use nonce."""
+    return canonical_json({"terms": terms, "nonce": nonce})
+
+
+def rollback_detail(from_checksum: str, nonce: str) -> str:
+    """Detail string for a rollback: the version being replaced plus a single-use nonce."""
+    return canonical_json({"from": from_checksum, "nonce": nonce})
+
+
+def new_nonce() -> str:
+    return secrets.token_hex(16)
 
 
 def new_key() -> bytes:

@@ -6,7 +6,7 @@ import pytest
 
 from conftest import commit
 from identity_runtime import IdentityRuntime, LedgerIntegrityError, compile_policy, validate_manifest
-from identity_runtime.signing import new_key, sign
+from identity_runtime.signing import module_detail, new_key, sign
 
 
 def test_malicious_manifest_rejected(make_runtime, malicious):
@@ -184,13 +184,14 @@ def test_signed_approvals(tmp_path, clock, tesla):
     from identity_runtime import ApprovalError
     with pytest.raises(ApprovalError, match="token"):
         rt.approve_module("tesla-edu-guide", mc, "identity", "alice")
-    wrong = sign(keys["alice"], "module", "tesla-edu-guide", mc, "reasoning", "alice")
+    pid = up["proposal_id"]
+    wrong = sign(keys["alice"], "module", "tesla-edu-guide", mc, module_detail("reasoning", pid), "alice")
     with pytest.raises(ApprovalError, match="token"):
         rt.approve_module("tesla-edu-guide", mc, "identity", "alice", signature=wrong)
     with pytest.raises(ApprovalError, match="keyring"):
         rt.approve_module("tesla-edu-guide", mc, "identity", "mallory", signature="00")
     for m in up["awaiting"]:
-        rt.approve_module("tesla-edu-guide", mc, m, "alice", signature=sign(keys["alice"], "module", "tesla-edu-guide", mc, m, "alice"))
+        rt.approve_module("tesla-edu-guide", mc, m, "alice", signature=sign(keys["alice"], "module", "tesla-edu-guide", mc, module_detail(m, pid), "alice"))
     for m in ("tool_policy", "safety_policy"):
-        r = rt.approve_module("tesla-edu-guide", mc, m, "bob", signature=sign(keys["bob"], "module", "tesla-edu-guide", mc, m, "bob"))
+        r = rt.approve_module("tesla-edu-guide", mc, m, "bob", signature=sign(keys["bob"], "module", "tesla-edu-guide", mc, module_detail(m, pid), "bob"))
     assert r["status"] == "committed"

@@ -15,10 +15,14 @@ Lifecycle of an action:
         -> held for a human (policy says so, or the OES-61440 tripwire fires)
         -> authorised autonomously (lease consumed once, proof recorded)
     held action -> approve_action (lease consumed once) or reject_action
+    authorised action -> host calls redeem_proof() once, right before acting
 
 The runtime authorises and records. It does not perform the action itself:
-the host application executes an action only when it holds a proof whose
-hash is in the ledger.
+the host application executes an action only after redeem_proof() accepts its
+proof. A proof redeems once, and only while its lease is still valid, its
+personality version is still active and the avatar is not halted.
+check_proof() and verify_proof() answer the same question without consuming
+anything; proof_in_ledger() is the historical, audit-only lookup.
 """
 
 from __future__ import annotations
@@ -33,6 +37,7 @@ from . import fabric
 from .ledger import HashChainLedger, LedgerIntegrityError
 from .policy import NEVER_GRANTABLE, PolicyError, compile_policy
 from .schema import validate_manifest
+from .signing import lease_detail, module_detail, rollback_detail
 from .signing import verify as verify_token
 from .simulation import ModelHook, ShadowSimulation
 from .store import Store, StoreError
@@ -44,6 +49,7 @@ QUORUM_SIZE = 2
 APPROVER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]{0,63}$")
 RESERVED_APPROVER_PREFIXES = ("avatar", "runtime", "system", "self")
 PROOF_VERSION = "identity-runtime/proof-v1"
+NONCE_RE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
 # Explicit rule, independent of the fabric: at or above this effective risk an
 # action is never authorised without a human.
 AUTONOMY_RISK_CEILING = 0.5
@@ -125,6 +131,21 @@ class IdentityRuntime:
     def _require_writable(self) -> None:
         if self.ledger.broken:
             raise LedgerIntegrityError(f"ledger is broken, runtime is read-only: {self.ledger.broken}")
+
+    def _check_nonce(self, nonce: str | None) -> None:
+        """Nonces are required when a keyring is configured and can be used only once."""
+        if nonce is None:
+            if self.approver_keys is not None:
+                raise ApprovalError("a nonce is required when approvals are signed")
+            return
+        if not isinstance(nonce, str) or not NONCE_RE.match(nonce):
+            raise ApprovalError("nonce must be 16-128 characters of letters, digits, '-' or '_'")
+        if nonce in self.store.state.get("used_nonces", {}):
+            raise ApprovalError("nonce has already been used")
+
+    def _record_nonce(self, nonce: str | None, kind: str, avatar_id: str) -> None:
+        if nonce is not None:
+            self.store.state.setdefault("used_nonces", {})[nonce] = {"kind": kind, "avatar_id": avatar_id, "ns": int(self.clock())}
 
     def _check_approver(self, avatar_id: str, approver: str, kind: str, subject: str, detail: str, signature: str | None) -> None:
         if not isinstance(approver, str) or not APPROVER_RE.match(approver):
@@ -211,9 +232,12 @@ class IdentityRuntime:
             for m, n in req.items():
                 if n == 0:
                     approvals[m] = ["runtime:auto"]
-            av["pending"][mc] = {"received_ns": int(self.clock()), "required": req, "approvals": approvals}
+            # A fresh proposal id per upload: module tokens bind it, so tokens from an
+            # earlier upload of the same manifest cannot approve this one.
+            proposal_id = self._new_id("proposal", av["identity_root"], mc)
+            av["pending"][mc] = {"received_ns": int(self.clock()), "required": req, "approvals": approvals, "proposal_id": proposal_id}
             self._log("personality_received", av["identity_root"], {
-                "avatar_id": avatar_id, "manifest_checksum": mc, "policy_hash": result["compiled"]["policy_hash"],
+                "avatar_id": avatar_id, "manifest_checksum": mc, "proposal_id": proposal_id, "policy_hash": result["compiled"]["policy_hash"],
                 "module_checksums": {m: checksum(b) for m, b in manifest["modules"].items()},
                 "auto_approved": [m for m, n in req.items() if n == 0], "policy_notes": result["compiled"]["notes"],
             })
@@ -224,6 +248,7 @@ class IdentityRuntime:
             "avatar_id": avatar_id,
             "identity_root": av["identity_root"],
             "manifest_checksum": mc,
+            "proposal_id": pending.get("proposal_id", ""),
             "policy_hash": result["compiled"]["policy_hash"],
             "policy_notes": result["compiled"]["notes"],
             "awaiting": self._awaiting(pending),
@@ -249,12 +274,13 @@ class IdentityRuntime:
             raise ApprovalError(f"module {module_type!r} is not in this manifest")
         if pending["required"][module_type] == 0:
             return {"status": "auto_approved", "module": module_type, "awaiting": self._awaiting(pending)}
-        self._check_approver(avatar_id, approver_id, "module", manifest_checksum, module_type, signature)
+        proposal_id = pending.get("proposal_id", "")
+        self._check_approver(avatar_id, approver_id, "module", manifest_checksum, module_detail(module_type, proposal_id), signature)
         approvers = pending["approvals"][module_type]
         if approver_id.casefold() in {a.casefold() for a in approvers}:
             raise ApprovalError(f"{approver_id!r} already approved {module_type!r}; quorum needs distinct people")
         approvers.append(approver_id)
-        self._log("module_approved", av["identity_root"], {"avatar_id": avatar_id, "manifest_checksum": manifest_checksum, "module": module_type, "approver": approver_id, "signed": signature is not None})
+        self._log("module_approved", av["identity_root"], {"avatar_id": avatar_id, "manifest_checksum": manifest_checksum, "proposal_id": proposal_id, "module": module_type, "approver": approver_id, "signed": signature is not None})
         awaiting = self._awaiting(pending)
         result = {"status": "approved", "module": module_type, "awaiting": awaiting}
         if not awaiting:
@@ -276,7 +302,7 @@ class IdentityRuntime:
         self._log("identity_committed", av["identity_root"], {"avatar_id": avatar_id, "manifest_checksum": mc, "previous": previous, "policy_hash": record["compiled"]["policy_hash"], "approvals": approvals, "revoked_leases": revoked})
         return {"active": mc, "previous": previous, "revoked_leases": revoked}
 
-    def rollback(self, avatar_id: str, approver_id: str, to_checksum: str | None = None, reason: str = "", signature: str | None = None) -> dict[str, Any]:
+    def rollback(self, avatar_id: str, approver_id: str, to_checksum: str | None = None, reason: str = "", signature: str | None = None, nonce: str | None = None) -> dict[str, Any]:
         self._require_writable()
         av = self._avatar(avatar_id)
         current = av["active"]
@@ -288,21 +314,27 @@ class IdentityRuntime:
             raise ApprovalError("can only roll back to a version this avatar has committed before")
         if to_checksum == current:
             raise ApprovalError("that version is already active")
-        self._check_approver(avatar_id, approver_id, "rollback", to_checksum, current or "", signature)
+        self._check_nonce(nonce)
+        self._check_approver(avatar_id, approver_id, "rollback", to_checksum, rollback_detail(current or "", nonce or ""), signature)
         self._load_version(to_checksum)  # raises if missing or tampered
+        self._record_nonce(nonce, "rollback", avatar_id)
         revoked = self._revoke_all(av, "rollback")
         if to_checksum in av["history"]:
             av["history"].remove(to_checksum)
         if current:
             av["history"].append(current)
         av["active"] = to_checksum
-        self._log("identity_rolled_back", av["identity_root"], {"avatar_id": avatar_id, "from": current, "to": to_checksum, "approver": approver_id, "reason": reason, "revoked_leases": revoked})
+        self._log("identity_rolled_back", av["identity_root"], {"avatar_id": avatar_id, "from": current, "to": to_checksum, "approver": approver_id, "reason": reason, "nonce": nonce, "revoked_leases": revoked})
         self._commit_state()
         return {"status": "rolled_back", "active": to_checksum, "previous": current, "revoked_leases": revoked}
 
     # ------------------------------------------------------------------ leases
-    def grant_lease(self, avatar_id: str, capability: str, approver_id: str, max_actions: int | None = None, ttl_seconds: int | None = None, signature: str | None = None) -> dict[str, Any]:
-        self._require_writable()
+    def lease_terms(self, avatar_id: str, capability: str, max_actions: int | None = None, ttl_seconds: int | None = None) -> dict[str, Any]:
+        """The effective (clamped) terms a grant would get right now. Read-only.
+
+        With a keyring, the approver signs exactly these terms plus a nonce
+        (signing.lease_detail), so a token cannot be reused for other terms.
+        """
         av = self._avatar(avatar_id)
         if av["halted"]:
             raise LeaseError("avatar is halted; clear the halt first")
@@ -314,16 +346,28 @@ class IdentityRuntime:
         cap = compiled["capabilities"].get(capability)
         if cap is None:
             raise LeaseError(f"{capability!r} is not enabled in the active personality's compiled policy")
-        self._check_approver(avatar_id, approver_id, "lease", av["active"], capability, signature)
         n = cap["max_actions"] if max_actions is None else max(1, min(int(max_actions), cap["max_actions"]))
         ttl = cap["lease_ttl_seconds"] if ttl_seconds is None else max(1, min(int(ttl_seconds), cap["lease_ttl_seconds"]))
+        return {
+            "avatar_id": avatar_id, "capability": capability, "version": av["active"], "policy_hash": compiled["policy_hash"],
+            "max_actions": n, "ttl_seconds": ttl, "allowed_contexts": list(cap["allowed_contexts"]),
+            "requires_human_approval": cap["requires_human_approval"],
+        }
+
+    def grant_lease(self, avatar_id: str, capability: str, approver_id: str, max_actions: int | None = None, ttl_seconds: int | None = None, signature: str | None = None, nonce: str | None = None) -> dict[str, Any]:
+        self._require_writable()
+        av = self._avatar(avatar_id)
+        terms = self.lease_terms(avatar_id, capability, max_actions, ttl_seconds)
+        self._check_nonce(nonce)
+        self._check_approver(avatar_id, approver_id, "lease", av["active"], lease_detail(terms, nonce or ""), signature)
+        self._record_nonce(nonce, "lease", avatar_id)
         now = int(self.clock())
         lease_id = self._new_id("lease", av["identity_root"], capability)
         lease = {
-            "lease_id": lease_id, "capability": capability, "version": av["active"], "policy_hash": compiled["policy_hash"],
-            "issued_ns": now, "expires_ns": now + ttl * 1_000_000_000, "max_actions": n, "used": 0, "reserved": 0,
-            "requires_human_approval": cap["requires_human_approval"], "allowed_contexts": cap["allowed_contexts"],
-            "granted_by": approver_id, "revoked": False,
+            "lease_id": lease_id, "capability": capability, "version": av["active"], "policy_hash": terms["policy_hash"],
+            "issued_ns": now, "expires_ns": now + terms["ttl_seconds"] * 1_000_000_000, "max_actions": terms["max_actions"], "used": 0, "reserved": 0,
+            "requires_human_approval": terms["requires_human_approval"], "allowed_contexts": terms["allowed_contexts"],
+            "granted_by": approver_id, "revoked": False, "nonce": nonce,
         }
         av["leases"][lease_id] = lease
         self._log("lease_granted", av["identity_root"], {"avatar_id": avatar_id, **lease})
@@ -400,10 +444,14 @@ class IdentityRuntime:
 
         if fab["halt"]:
             av["halted"] = True
+            # Each halt gets its own id; a clear_halt token binds it, so a token
+            # for one halt cannot clear a later one.
+            halt_id = self._new_id("halt", root, capability)
+            av["halt_id"] = halt_id
             revoked = self._revoke_all(av, "fabric_halt")
-            entry = self._log("avatar_halted", root, {"avatar_id": avatar_id, "capability": capability, "effective_risk": effective, "fabric": fab_summary, "revoked_leases": revoked})
+            entry = self._log("avatar_halted", root, {"avatar_id": avatar_id, "halt_id": halt_id, "capability": capability, "effective_risk": effective, "fabric": fab_summary, "revoked_leases": revoked})
             self._commit_state()
-            return {"decision": "halted", "reason": "oes61440_halt", "fabric": fab_summary, "ledger_seq": entry["seq"]}
+            return {"decision": "halted", "reason": "oes61440_halt", "halt_id": halt_id, "fabric": fab_summary, "ledger_seq": entry["seq"]}
 
         reasons = []
         if cap["requires_human_approval"]:
@@ -485,18 +533,84 @@ class IdentityRuntime:
         av = self._avatar(avatar_id)
         if not av["halted"]:
             return {"status": "not_halted"}
-        self._check_approver(avatar_id, approver_id, "clear_halt", av["identity_root"], "", signature)
+        halt_id = av.get("halt_id") or f"legacy-{av['identity_root']}"
+        self._check_approver(avatar_id, approver_id, "clear_halt", halt_id, "", signature)
         av["halted"] = False
-        self._log("halt_cleared", av["identity_root"], {"avatar_id": avatar_id, "approver": approver_id, "reason": reason})
+        av["halt_id"] = None
+        self._log("halt_cleared", av["identity_root"], {"avatar_id": avatar_id, "halt_id": halt_id, "approver": approver_id, "reason": reason})
         self._commit_state()
         return {"status": "cleared"}
 
     # ------------------------------------------------------------------ reading
-    def verify_proof(self, proof: dict[str, Any]) -> bool:
+    def proof_in_ledger(self, proof: dict[str, Any]) -> bool:
+        """Historical, audit-only check: was this exact proof authorised and recorded?
+
+        True even after the proof is redeemed, its lease revoked or its version
+        replaced. Never use it to decide whether to execute; use redeem_proof().
+        """
+        if not isinstance(proof, dict) or not isinstance(proof.get("proof_hash"), str):
+            return False
         body = {k: v for k, v in proof.items() if k != "proof_hash"}
-        if checksum(body) != proof.get("proof_hash"):
+        if checksum(body) != proof["proof_hash"]:
             return False
         return any(e["payload"].get("proof", {}).get("proof_hash") == proof["proof_hash"] for e in self.ledger.find("action_authorised"))
+
+    def check_proof(self, proof: dict[str, Any]) -> dict[str, Any]:
+        """Read-only: would redeem_proof() accept this proof right now? Consumes nothing."""
+        def no(reason: str) -> dict[str, Any]:
+            return {"valid": False, "reason": reason}
+
+        if self.ledger.broken:
+            return no("ledger_broken")
+        if not self.proof_in_ledger(proof):
+            return no("not_an_authorised_proof")
+        av = self._avatars.get(proof.get("avatar_id"))
+        action = av["actions"].get(proof.get("action_id")) if av else None
+        if action is None or action["proof"].get("proof_hash") != proof["proof_hash"]:
+            return no("unknown_action")
+        if action["status"] == "redeemed":
+            return no("already_redeemed")
+        if action["status"] != "authorised":
+            return no(f"action_{action['status']}")
+        if av["halted"]:
+            return no("avatar_halted")
+        if av["active"] != proof.get("manifest_checksum"):
+            return no("version_not_active")
+        lease = av["leases"].get(proof.get("lease_id"))
+        if lease is None:
+            return no("unknown_lease")
+        problem = self._lease_valid(av, lease)
+        if problem:
+            return no(f"lease_{problem}")
+        return {"valid": True, "reason": None}
+
+    def verify_proof(self, proof: dict[str, Any]) -> bool:
+        """Read-only and current-only: True if redeem_proof() would accept the proof now."""
+        return self.check_proof(proof)["valid"]
+
+    def redeem_proof(self, proof: dict[str, Any], by: str = "host") -> dict[str, Any]:
+        """Consume a proof exactly once, right before the host executes the action.
+
+        Accepted only if the proof is authentic, recorded, not yet redeemed, its
+        lease is neither revoked nor expired, its version is still active and the
+        avatar is not halted. The result is recorded in the ledger either way.
+        """
+        self._require_writable()
+        result = self.check_proof(proof)
+        action_id = proof.get("action_id") if isinstance(proof, dict) else None
+        av = self._avatars.get(proof.get("avatar_id")) if isinstance(proof, dict) else None
+        root = av["identity_root"] if av else None
+        if not result["valid"]:
+            entry = self._log("proof_redemption_refused", root, {"action_id": action_id if isinstance(action_id, str) else None, "reason": result["reason"], "by": by})
+            self._commit_state()
+            return {"status": "rejected", "reason": result["reason"], "ledger_seq": entry["seq"]}
+        action = av["actions"][action_id]
+        action["status"] = "redeemed"
+        action["redeemed_ns"] = int(self.clock())
+        action["redeemed_by"] = by
+        entry = self._log("proof_redeemed", root, {"avatar_id": proof["avatar_id"], "action_id": action_id, "proof_hash": proof["proof_hash"], "by": by})
+        self._commit_state()
+        return {"status": "redeemed", "action_id": action_id, "ledger_seq": entry["seq"]}
 
     def verify(self) -> dict[str, Any]:
         result = self.ledger.verify_chain()
@@ -509,6 +623,8 @@ class IdentityRuntime:
     def current_identity(self, avatar_id: str) -> dict[str, Any]:
         av = self._avatar(avatar_id)
         out = {"avatar_id": avatar_id, "identity_root": av["identity_root"], "active": av["active"], "halted": av["halted"], "history": list(av["history"]), "pending": {mc: self._awaiting(p) for mc, p in av["pending"].items()}}
+        out["halt_id"] = (av.get("halt_id") or f"legacy-{av['identity_root']}") if av["halted"] else None
+        out["proposal_ids"] = {mc: p.get("proposal_id", "") for mc, p in av["pending"].items()}
         if av["active"]:
             record = self._load_version(av["active"])
             ident = record["manifest"]["modules"]["identity"]
