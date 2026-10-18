@@ -1,6 +1,6 @@
 {
   "schema": "identity-runtime/adversarial-benchmark-v1",
-  "identity_runtime_version": "0.1.0",
+  "identity_runtime_version": "0.2.0",
   "seed": 61440,
   "trials": 20,
   "summary": {
@@ -563,25 +563,25 @@
     "in_memory": {
       "authorised": {
         "n": 50,
-        "mean_ms": 4.542,
+        "mean_ms": 4.562,
         "median_ms": 4.521
       },
       "denied": {
         "n": 50,
-        "mean_ms": 0.322,
-        "median_ms": 0.266
+        "mean_ms": 0.28,
+        "median_ms": 0.276
       }
     },
     "file_backed": {
       "authorised": {
         "n": 50,
-        "mean_ms": 6.21,
-        "median_ms": 6.205
+        "mean_ms": 7.169,
+        "median_ms": 6.822
       },
       "denied": {
         "n": 50,
-        "mean_ms": 1.315,
-        "median_ms": 1.216
+        "mean_ms": 1.643,
+        "median_ms": 1.394
       }
     }
   }

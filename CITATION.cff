@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below. It is a research prototype: classical, deterministic, standard-library Python, with illustrative and uncalibrated thresholds."
 type: software
 title: "identity-runtime: governed, reversible avatar personalities with leased capabilities"
-version: 0.1.0
+version: 0.2.0
 date-released: "2026-10-18"
 doi: "10.5281/zenodo.23448946"
 identifiers:

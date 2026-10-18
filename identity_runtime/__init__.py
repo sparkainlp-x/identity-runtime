@@ -10,7 +10,7 @@ from .runtime import ActionError, ApprovalError, IdentityRuntime, LeaseError, Un
 from .schema import SCHEMA_ID, validate_manifest
 from .simulation import ShadowSimulation
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "ActionError",

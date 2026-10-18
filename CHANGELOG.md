@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-18)
 
 - Replay fixes found by the adversarial benchmark (all four are now rejected in every benchmark attempt, and CI fails if one is accepted again):
   - **Single-use, current-only proofs.** New `redeem_proof(proof, by="host")` consumes a proof once, right before the host acts. It refuses a proof that has been redeemed, whose lease is revoked or expired, whose version is no longer active, or whose avatar is halted. Redemptions are persisted (action status `redeemed` in `state.json`) and logged (`proof_redeemed`, `proof_redemption_refused`). There is a new read-only `check_proof()` (returns the reason) and `proof_in_ledger()` (a historical, audit-only lookup). The CLI adds `redeem` and `check-proof`.

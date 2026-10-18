@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "identity-runtime"
-version = "0.1.0"
+version = "0.2.0"
 description = "Research prototype: governed, reversible avatar personalities with leased capabilities and a hash-chained audit ledger (stdlib-only Python)"
 readme = "README.md"
 requires-python = ">=3.10"
