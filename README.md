@@ -113,7 +113,7 @@ python -m pip install pytest
 python -m pytest -q
 ```
 
-87 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
+88 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections, question matching and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
 
 ## Citation
 
