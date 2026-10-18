@@ -4,6 +4,14 @@ type: software
 title: "identity-runtime: governed, reversible avatar personalities with leased capabilities"
 version: 0.1.0
 date-released: "2026-10-18"
+doi: "10.5281/zenodo.23448946"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.23448946"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.23448947"
+    description: "Version DOI for v0.1.0"
 license: AGPL-3.0-only
 repository-code: "https://github.com/sparkainlp-x/identity-runtime"
 url: "https://sparkainlp-x.github.io/identity-runtime/"
