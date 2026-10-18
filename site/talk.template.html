@@ -340,22 +340,56 @@ function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var p=[],i,j;for(j=0
 var E=D.entries.map(function(e){
   return {e:e,kw:e.keywords.map(function(k){var n=norm(k);return {n:n,multi:n.trim().indexOf(" ")>0,t:toks(k)};}),qt:toks(e.q)};
 });
+/* Score every entry: s is the total, k the part that came from keywords (exact or fuzzy), not from words of the question text. */
 function score(query){
   var nq=norm(query),qt=toks(query),set={};qt.forEach(function(t){set[t]=1;});
   return E.map(function(x){
-    var s=0,hit={};
+    var s=0,hit={},fz={};
     x.kw.forEach(function(k){
       if(k.multi){if(nq.indexOf(k.n)>=0){s+=2+k.t.length;k.t.forEach(function(t){hit[t]=1;});}}
       else if(k.t.length){var t=k.t[0];
         if(set[t]){if(!hit[t]){s+=2;hit[t]=1;}}
-        else if(t.length>=5){for(var i=0;i<qt.length;i++){if(qt[i].length>=5&&lev(qt[i],t)<=(t.length>=8?2:1)){if(!hit[t]){s+=1.5;hit[t]=1;}break;}}}
+        else if(t.length>=5&&!hit[t]){for(var i=0;i<qt.length;i++){var w=qt[i];if(w.length>=5&&!fz[w]&&lev(w,t)<=(t.length>=8?2:1)){s+=1.5;hit[t]=1;fz[w]=1;break;}}}
       }
     });
+    var k=s;
     x.qt.forEach(function(t){if(set[t]&&!hit[t]){s+=0.6;hit[t]=1;}});
-    return {x:x,s:s};
+    return {x:x,s:s,k:k};
   }).sort(function(a,b){return b.s-a.s;});
 }
 var THRESH=2;
+/* Words that show a question is about the guide's subject even when no note matches it. */
+var TOPIC={"tesla":1,"nikola":1,"he":1,"his":1,"him":1,"inventor":1,"science":1,"scientist":1,"physics":1,"engineer":1,"engineering":1,"history":1,"experiment":1,"electrical":1,"electron":1,"electrons":1};
+var VOCAB={};E.forEach(function(x){x.kw.forEach(function(k){if(!k.multi)k.t.forEach(function(t){VOCAB[t]=1;});});});
+function topical(query,best){
+  if(best&&best.k>0)return true;
+  var raw=norm(query).trim().split(" ");
+  for(var i=0;i<raw.length;i++){if(TOPIC[raw[i]]||VOCAB[stem(raw[i])])return true;}
+  return false;
+}
+var OVERVIEW="who_was_tesla",BROAD=["what_is_electricity","inventions_overview","tesla_and_electricity","induction_motor"];
+var LEAD_CLOSE="Here is the closest note I have: ";
+var LEAD_OVERVIEW="I don't have a note on exactly that, so here is an overview instead. ";
+var OFF_TOPIC="I only cover Nikola Tesla and the history of electricity, from a fixed list of sourced notes, so I don't have an answer for that. Try one of the questions below.";
+function entryById(id){for(var i=0;i<E.length;i++)if(E[i].e.id===id)return E[i].e;return null;}
+/* Decide the reply. kind is "answer", "closest", "overview" or "offtopic"; it never dead-ends on an on-topic question. */
+function pick(query){
+  var r=score(query),best=r[0],top=best?best.x.e:null;
+  function fill(list,n,skip){
+    var out=[],seen={};if(skip)seen[skip]=1;
+    list.concat(BROAD).forEach(function(e){if(typeof e==="string")e=entryById(e);if(e&&!seen[e.id]&&out.length<n){seen[e.id]=1;out.push(e);}});
+    return out;
+  }
+  if(best&&best.s>=THRESH){
+    var more=r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;});
+    return {kind:"answer",entry:top,text:top.a,more:fill(more,3,top.id)};
+  }
+  if(!topical(query,best))return {kind:"offtopic",entry:null,text:OFF_TOPIC,more:fill([OVERVIEW],4)};
+  var near=r.filter(function(z){return z.s>0;}).map(function(z){return z.x.e;});
+  if(best&&best.s>=1)return {kind:"closest",entry:top,text:LEAD_CLOSE+top.a,more:fill(near.slice(1,4),3,top.id)};
+  var ov=entryById(OVERVIEW);
+  return {kind:"overview",entry:ov,text:LEAD_OVERVIEW+ov.a,more:fill(near.slice(0,3),3,OVERVIEW)};
+}
 /* ---- end matching ---- */
 
 /* ---- avatar ---- */
@@ -657,18 +691,10 @@ function ask(q){
   q=String(q).trim();if(!q)return;
   stopSpeech();
   add("You",q,"you");
-  var r=score(q);
+  var p=pick(q);
   think(reduce?250:Math.min(1100,450+q.length*8),function(){
-    if(r[0].s>=THRESH){
-      var top=r[0].x.e;answer(top,false);
-      var more=r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;});
-      if(more.length<3)more=more.concat(START.filter(function(i){return i!==top.id&&more.every(function(m){return m.id!==i;});}).slice(0,4-more.length).map(function(i){return byId[i];}));
-      suggest(more);
-    }else{
-      var close=r.filter(function(z){return z.s>0;}).slice(0,3).map(function(z){return z.x.e;});
-      answer(null,true,"I don't have a scripted answer for that. I only answer from a fixed list of sourced notes about Nikola Tesla and the history of electricity, so I would rather say so than guess."+(close.length?" Perhaps one of the suggestions below is close.":" Try one of the suggested questions below."));
-      suggest(close.length?close:START.slice(0,4).map(function(i){return byId[i];}));
-    }
+    answer(p.entry,p.kind==="offtopic",p.text);
+    suggest(p.more);
   });
 }
 $("form").addEventListener("submit",function(ev){ev.preventDefault();var i=$("ask");ask(i.value);i.value="";i.focus();});

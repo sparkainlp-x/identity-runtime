@@ -96,7 +96,7 @@ def test_talk_page_is_self_contained_and_labelled(site):
     assert "Napoleon Sarony" in page and "c. 1890" in page and "Public domain" in page
     assert "https://commons.wikimedia.org/wiki/File:Tesla_circa_1890.jpeg" in page
     # speech, accessibility and motion
-    for needle in ["SpeechRecognition", "webkitSpeechRecognition", "speechSynthesis", 'aria-live="polite"', "prefers-reduced-motion", "I don't have a scripted answer for that"]:
+    for needle in ["SpeechRecognition", "webkitSpeechRecognition", "speechSynthesis", 'aria-live="polite"', "prefers-reduced-motion", "I only cover Nikola Tesla and the history of electricity"]:
         assert needle in page, needle
     for word in BANNED_WORDS:
         assert not re.search(r"\b" + re.escape(word) + r"\b", page, re.I), word
@@ -342,3 +342,37 @@ def test_avatar_skin_is_fair_solid_and_not_darkened(site):
     assert _luminance(face) > 0.45 and max(_luminance(c) for c in skins) > 0.75
     assert "filter=" not in svg and "mix-blend" not in svg and "<image" not in svg
     assert '<meta name="color-scheme" content="dark light">' in page and "forced-color-adjust:none" in page
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_matching_never_dead_ends_on_topical_questions(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    data = page.split('<script id="talk" type="application/json">')[1].split("</script>")[0]
+    code = page.split("/* ---- matching ---- */")[1].split("/* ---- end matching ---- */")[0]
+    queries = ["tell me about electricity", "electricity", "what is electricity", "how does electricity work",
+               "what did he invent", "tell me about his life", "magnets", "power grid",
+               "did tesla invent electricity", "what is the weather", "football scores", "electrisity", "tesla"]
+    script = (
+        "const D=" + data + ";" + code +
+        "console.log(JSON.stringify(" + json.dumps(queries) + ".map(function(q){var p=pick(q);"
+        "return {kind:p.kind,id:p.entry&&p.entry.id,text:p.text,more:p.more.map(function(e){return e.id;})};})));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True).stdout)
+    got = dict(zip(queries, out))
+    expected = {
+        "tell me about electricity": "what_is_electricity", "electricity": "what_is_electricity",
+        "what is electricity": "what_is_electricity", "how does electricity work": "electric_current",
+        "what did he invent": "inventions_overview", "tell me about his life": "who_was_tesla",
+        "magnets": "electromagnetism", "power grid": "power_grid_today",
+        "did tesla invent electricity": "myth_electricity",
+    }
+    for q, want in expected.items():
+        assert got[q]["kind"] == "answer" and got[q]["id"] == want, (q, got[q])
+        assert len(got[q]["more"]) == 3, q
+    for q in ["what is the weather", "football scores"]:
+        assert got[q]["kind"] == "offtopic" and got[q]["id"] is None, (q, got[q])
+        assert got[q]["text"].startswith("I only cover Nikola Tesla and the history of electricity"), q
+        assert got[q]["more"], q
+    assert got["electrisity"]["kind"] == "closest" and got["electrisity"]["id"] == "what_is_electricity"
+    assert got["electrisity"]["text"].startswith("Here is the closest note I have:")
+    assert got["tesla"]["kind"] == "overview" and got["tesla"]["id"] == "who_was_tesla" and len(got["tesla"]["more"]) == 3
