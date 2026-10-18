@@ -143,7 +143,8 @@ $("status").innerHTML="";
     [". This page performs one read-only action, respond_in_chat in the education context: ",S.actions.respond_in_chat],
     [". send_email: ",S.actions.send_email],
     [". spend_money: ",S.actions.spend_money],
-    [". Ledger verified: ",String(S.ledger.valid)+", "+S.ledger.entries+" entries. Recorded at build time with identity-runtime "+S.version+"."]
+    [". Ledger verified: ",String(S.ledger.valid)+", "+S.ledger.entries+" entries"],
+    [". Recorded at build time with identity-runtime ",S.version+"."]
   ];
   parts.forEach(function(p){$("status").appendChild(document.createTextNode(p[0]));var b=document.createElement("b");b.textContent=p[1];$("status").appendChild(b);});
 })();
@@ -177,13 +178,13 @@ var THRESH=2;
 
 /* ---- voice ---- */
 var synth=window.speechSynthesis,voices=[],muted=false;
-var PREF=/(daniel|george|arthur|oliver|male|guy|ryan|thomas|fred|alex|david|mark|james|aaron|rishi|google uk english male)/i;
+var PREF=/(\bmale\b|daniel|george|arthur|oliver|guy|ryan|thomas|fred|alex|david|mark|james|aaron|rishi)/i;
 function loadVoices(){
   if(!synth)return;
   voices=synth.getVoices().filter(function(v){return /^en/i.test(v.lang);});
   var sel=$("voiceSel"),cur=sel.value;sel.innerHTML="";
   if(!voices.length){var o=document.createElement("option");o.textContent="Default browser voice";o.value="";sel.appendChild(o);return;}
-  var best=-1;voices.forEach(function(v,i){var o=document.createElement("option");o.value=String(i);o.textContent=v.name+" ("+v.lang+")";sel.appendChild(o);if(best<0&&PREF.test(v.name))best=i;});
+  var best=-1;voices.forEach(function(v,i){var o=document.createElement("option");o.value=String(i);o.textContent=v.name+" ("+v.lang+")";sel.appendChild(o);if(best<0&&PREF.test(v.name)&&!/female/i.test(v.name))best=i;});
   sel.value=cur&&sel.querySelector('option[value="'+cur+'"]')?cur:String(best<0?0:best);
 }
 if(synth){loadVoices();if("onvoiceschanged" in synth)synth.onvoiceschanged=loadVoices;}
@@ -237,7 +238,12 @@ function ask(q){
   q=String(q).trim();if(!q)return;
   add("You",q,"you");
   var r=score(q);
-  if(r[0].s>=THRESH){answer(r[0].x.e,false);suggest(r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;}).concat(r[0].x.e.id==="greeting"?START.slice(0,3).map(function(i){return byId[i];}):[]));}
+  if(r[0].s>=THRESH){
+    var top=r[0].x.e;answer(top,false);
+    var more=r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;});
+    if(more.length<3)more=more.concat(START.filter(function(i){return i!==top.id&&more.every(function(m){return m.id!==i;});}).slice(0,4-more.length).map(function(i){return byId[i];}));
+    suggest(more);
+  }
   else{
     var close=r.filter(function(z){return z.s>0;}).slice(0,3).map(function(z){return z.x.e;});
     answer(null,true,"I don't have a scripted answer for that. I only answer from a fixed list of sourced notes about Nikola Tesla and the history of electricity, so I would rather say so than guess."+(close.length?" Perhaps one of the suggestions below is close.":" Try one of the suggested questions below."));
@@ -271,6 +277,8 @@ D.entries.forEach(function(e){var li=document.createElement("li"),b=document.cre
 add("Guide (scripted)",D.persona.greeting,"guide");
 suggest(START.map(function(i){return byId[i];}).filter(Boolean));
 if(reduce)log.style.scrollBehavior="auto";
+/* optional deep link: talk.html?ask=your+question */
+var pre=new URLSearchParams(location.search).get("ask");if(pre)ask(pre.slice(0,300));
 })();
 </script>
 </body>
