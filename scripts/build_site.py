@@ -193,7 +193,7 @@ def build(out_dir: Path) -> Path:
 <code>python -m identity_runtime demo</code> (version {html.escape(__version__)}), recorded when the page was built. Nothing runs in your browser and no data is sent anywhere.</p>
 <p>The demo uploads a fictional educational character inspired by the historical inventor Nikola Tesla (1856-1943). It is not Nikola Tesla and is not affiliated with Tesla, Inc. The upload is checked against the schema and simulated, waits for human approvals (two distinct people for tool and safety policy), commits, then requests actions under human-granted leases.</p>
 <p><a href="animation.html">Animated walkthrough of the same lifecycle</a> (keyboard controls, captions, respects reduced-motion settings).</p>
-<p><a href="talk.html">Talk with the Tesla guide</a>: ask the same character questions by typing or speaking and hear scripted, sourced answers in a browser voice. A fictional character, not Tesla himself and not an AI chatbot.</p>
+<p><a href="talk.html">Talk with the Tesla guide</a>: ask the same character questions by typing or speaking and hear scripted, sourced answers in a browser voice. This demo cannot generate an answer. It selects from a finite set of scripted, sourced answers using browser-side matching. A fictional character, not Tesla himself and not an AI chatbot.</p>
 <h2>Steps</h2>
 <table><thead><tr><th>#</th><th>Step</th><th>Outcome</th></tr></thead><tbody>
 {rows}
@@ -204,10 +204,12 @@ def build(out_dir: Path) -> Path:
 {personas}
 <h2>Limits</h2>
 <ul>
-<li>Text screening catches copy-pasted attacks, not paraphrases.</li>
+<li>Not tested against real attackers. Single process, local files, no locking for concurrent writers.</li>
+<li>Text screening catches copy-pasted attacks, not paraphrases. The shadow simulation replays fixed requests against the compiled policy; it is not a model security evaluation.</li>
+<li>Persona text is not enforced on a language model; whether a model follows it depends on the model and the host.</li>
 <li>The OES-61440 tripwire is a fixed, uncalibrated threshold hierarchy, not a learned model and not a safety guarantee.</li>
 <li>The runtime authorises and records; it executes nothing and provides no sandbox.</li>
-<li>Approval tokens are optional shared-secret HMACs, not public-key signatures. The ledger is tamper-evident, not tamper-proof.</li>
+<li>Approval tokens are optional shared-secret HMACs, not public-key signatures. The ledger is tamper-evident, not tamper-proof: whoever controls both the ledger and the state file can rewrite a consistent history. See <a href="https://github.com/sparkainlp-x/identity-runtime/blob/main/THREAT-MODEL.md">THREAT-MODEL.md</a>.</li>
 </ul>
 <p>Source, tests and citation: <a href="https://github.com/sparkainlp-x/identity-runtime">github.com/sparkainlp-x/identity-runtime</a>. AGPL-3.0-only. Author: Jean-François Brisson, Spark AI NLP, Fredericton, New Brunswick, Canada.</p>
 </body></html>
