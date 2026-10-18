@@ -516,3 +516,60 @@ def test_every_listed_question_answers_with_its_own_note(site):
     assert got["What about 3, 6 and 9?"]["id"] == "myth_369"
     assert got["What did Tesla do before coming to America?"]["id"] == "early_jobs"
 
+
+# Natural phrasings: lower case, no punctuation, common typos and the English of a French speaker.
+PARAPHRASES = [
+    ("who invented the ac motor", "induction_motor"),
+    ("how does an induction motor works", "how_motor_works"),
+    ("tesla vs edison", "edison_rivalry"),
+    ("did edison and tesla hate each other", "edison_rivalry"),
+    ("what is the war of current", "war_of_currents"),
+    ("difference between ac and dc", "ac_vs_dc"),
+    ("where tesla was born", "born"),
+    ("when he is born", "born"),
+    ("tesla coil what is it", "tesla_coil"),
+    ("how make a tesla coil at home", "build_coil"),
+    ("is tesla invented the radio", "radio_inventor"),
+    ("marconi or tesla for the radio", "radio_inventor"),
+    ("what he did in colorado", "colorado"),
+    ("wardencliffe tower", "wardenclyffe"),
+    ("the tower of wardenclyffe what happened", "wardenclyffe"),
+    ("free energy is real", "myth_free_energy"),
+    ("death ray tesla", "myth_death_ray"),
+    ("the numbers 3 6 9", "myth_369"),
+    ("369 meaning", "myth_369"),
+    ("was he married", "married"),
+    ("how he died", "death"),
+    ("did he won a nobel prize", "nobel"),
+    ("tesla and pigeons", "pigeons"),
+    ("how many patent he have", "patents"),
+    ("what is electricty", "what_is_electricity"),
+    ("what did tesla do before he came in america", "early_jobs"),
+    ("tesla and westinghouse deal", "westinghouse"),
+    ("niagara falls power plant", "niagara"),
+    ("x-rays tesla", "xrays"),
+    ("the boat with radio control", "radio_boat"),
+    ("is tesla related to elon musk", "tesla_inc"),
+    ("are you a robot", "are_you_ai"),
+    ("explain me the electromagnetism", "electromagnetism"),
+    ("who is nikola tesla", "who_was_tesla"),
+    ("how electricity arrive to my house", "power_grid_today"),
+    ("what is lightning", "lightning"),
+    ("tesla frequencies heal", "myth_health"),
+    ("the tesla unit in mri", "unit"),
+    ("what he do in paris and budapest", "early_jobs"),
+    ("when he arrive in new york", "arrival_us"),
+    ("he was serbian or croatian", "nationality"),
+    ("what university he go", "education"),
+    ("did tesla make wireless electricity for homes", "myth_wireless_homes"),
+    ("the earthquake machine", "myth_earthquake"),
+    ("what is the difference between energy and power", "energy_vs_power")
+]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_paraphrases_reach_the_right_note(site):
+    assert len(PARAPHRASES) >= 30
+    got = _pick_in_node(site, [q for q, _ in PARAPHRASES])["picks"]
+    wrong = [(q, want, got[q]["kind"], got[q]["id"]) for q, want in PARAPHRASES if got[q]["kind"] != "answer" or got[q]["id"] != want]
+    assert wrong == [], wrong

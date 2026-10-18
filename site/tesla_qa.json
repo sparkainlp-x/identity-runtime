@@ -1157,7 +1157,9 @@
         "overview",
         "summary",
         "his life",
-        "about him"
+        "about him",
+        "who is tesla",
+        "who is nikola"
       ],
       "a": "Nikola Tesla (1856-1943) was an inventor and electrical engineer. He was born in Smiljan, then in the Austrian Empire and now in Croatia, to a Serbian family. He studied in Graz, worked in Budapest and Paris, and moved to New York in 1884, where he worked briefly for Edison's company. His polyphase AC motor patents of 1888, licensed to George Westinghouse, made his name, followed by the Tesla coil, lighting demonstrations, radio remote control and the unfinished Wardenclyffe Tower. He died in a New York hotel room in January 1943. I am a scripted guide inspired by him, not Tesla himself.",
       "source": {
@@ -1300,7 +1302,10 @@
         "transmission",
         "mains",
         "outlet",
-        "socket"
+        "socket",
+        "electricity arrive",
+        "my house",
+        "my home"
       ],
       "a": "Most of the world's electricity is generated, sent and used as alternating current. Power stations produce three-phase AC, and transformers step it up to hundreds of thousands of volts for long transmission lines, because a higher voltage needs less current and so wastes less energy as heat in the wires. Substations step it down again, and a local transformer brings it to about 120 or 230 volts in homes, at 60 or 50 cycles a second. Polyphase AC, which my namesake helped develop, is still the basis of these grids, although many engineers built them and some long links now use high-voltage direct current.",
       "source": {
