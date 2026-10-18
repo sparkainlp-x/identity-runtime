@@ -26,6 +26,7 @@ header h1{margin:0;font-size:1.45rem;color:var(--gold);font-weight:650}
 .stage svg{display:block;width:100%;height:auto;border-radius:.45rem;background:#0a1430;forced-color-adjust:none;color-scheme:only light}
 @media (max-width:860px){.stage svg{max-width:19rem;margin:0 auto}}
 .stage .label{font-size:.76rem;color:var(--muted);margin:.45rem .2rem 0}
+#voiceNote{border-left:3px solid var(--gold);padding-left:.5rem}
 .stage .label b{color:var(--gold);font-weight:600}
 .photo{display:flex;gap:.6rem;align-items:flex-start;margin-top:.8rem}
 .photo img{width:4.6rem;height:auto;border-radius:.3rem;filter:grayscale(1) sepia(.15);flex:none}
@@ -200,7 +201,7 @@ body.still .msg{animation:none}
         <h2 id="hVoice">Voice</h2>
         <p class="hint" id="voiceLabel">Synthetic narration. Not a recording or imitation of Nikola Tesla.</p>
         <div id="voiceControls">
-          <label for="voiceSel">Browser voice (deeper voices first)</label>
+          <label for="voiceSel">Browser voice (male voices first)</label>
           <select id="voiceSel"></select>
           <label for="rate">Rate <span id="rateVal"></span></label>
           <input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9">
@@ -209,9 +210,11 @@ body.still .msg{animation:none}
           <p style="margin:.6rem 0 0;display:flex;gap:.4rem;flex-wrap:wrap">
             <button type="button" id="mute" aria-pressed="false">Mute voice</button>
             <button type="button" id="stop">Stop</button>
+            <button type="button" id="testVoice">Test voice</button>
             <button type="button" id="reset">Reset voice settings</button>
           </p>
         </div>
+        <p class="hint" id="voiceNote" hidden></p>
         <p class="hint" id="noVoice" hidden>Your browser has no speech synthesis. Answers are shown as text.</p>
       </section>
     </aside>
@@ -495,42 +498,98 @@ function startSpeech(text,silent){
 }
 function stopSpeech(){TL.token++;if(synth)synth.cancel();if(TL.active)finishSpeech();}
 
-/* ---- voice selection and saved settings ---- */
-var synth=window.speechSynthesis,voices=[],muted=false,STORE="identity-runtime.talk.v1",saved={};
-try{saved=JSON.parse(localStorage.getItem(STORE)||"{}")||{};}catch(e){saved={};}
-function save(){var o=$("voiceSel").options[$("voiceSel").selectedIndex];try{localStorage.setItem(STORE,JSON.stringify({voice:o&&o.dataset.name||"",rate:$("rate").value,pitch:$("pitch").value,muted:muted}));}catch(e){}}
-function voiceScore(v){
-  var n=v.name,s=0;
-  if(/female|woman|zira|susan|hazel|samantha|karen|moira|tessa|fiona|victoria|serena|kate|libby|sonia|jenny|aria/i.test(n))s-=100;
-  if(/google uk english male/i.test(n))s+=100;
-  else if(/microsoft (guy|ryan|thomas|george|david|mark|christopher|eric|roger|steffan)/i.test(n))s+=90;
-  else if(/daniel|arthur|oliver|gordon|fred|alex|aaron|rishi|lee|james|ralph|reed/i.test(n))s+=70;
-  else if(/\bmale\b/i.test(n))s+=60;
-  if(/^en[-_]gb/i.test(v.lang))s+=6;else if(/^en[-_]us/i.test(v.lang))s+=3;
-  return s;
+/* ---- voice gender ---- */
+/* Browsers do not report a voice's gender, so it is inferred from names and URIs.
+   Android Google TTS voice ids: crosstales RT-Voice, notes on the 32 English voices of Android 11,
+   https://discussions.unity.com/t/rt-voice-run-time-text-to-speech-solution/588886?page=78
+   (male: en-au-x-aub/aud, en-gb-x-gbb/gbd/rjs, en-in-x-end/ene, en-us-x-iol/iom/tpd; the others are female),
+   and the #male_N / #female_N variant names listed at https://stackoverflow.com/questions/41199064 .
+   Chrome on Android often exposes one voice per language, named like "English (United Kingdom)" or
+   "en-GB-language", which follows the voice chosen in Android settings; its gender cannot be known here. */
+var VOICE_FEMALE=[/#female/,/\bfemale\b/,/\bgoogle us english\b/,
+  /\ben-gb-x-(gba|gbc|gbg|fis)\b/,/\ben-us-x-(sfg|tpc|tpf|iob|iog)\b/,/\ben-au-x-(aua|auc|afh)\b/,/\ben-in-x-(ahp|cxx|ena|enc)\b/,
+  /\b(samantha|victoria|karen|moira|tessa|fiona|kate|serena|allison|ava|susan|veena|nicky|catherine|martha|zoe|shelley|sandy|flo|grandma)\b/,
+  /\b(zira|hazel|aria|jenny|sonia|libby|michelle|emma|ana|natasha|clara|heera|linda|maisie|mia|neerja|ashley|cora|elizabeth|jane|nancy|amber|sara)\b/];
+var VOICE_MALE=[/#male/,/\bmale\b/,
+  /\ben-gb-x-(gbb|gbd|rjs)\b/,/\ben-us-x-(iol|iom|tpd)\b/,/\ben-au-x-(aub|aud)\b/,/\ben-in-x-(end|ene)\b/,
+  /\bmicrosoft (guy|ryan|thomas|david|mark|george|christopher|eric|andrew|brian|davis|roger|steffan|william|liam|prabhat|james)\b/,
+  /\b(daniel|alex|aaron|arthur|fred|oliver|rishi|tom|gordon|lee|ralph|reed|rocko|grandpa|eddy)\b/];
+function voiceGender(v){
+  var n=((v&&v.name)||"")+" "+((v&&v.voiceURI)||"");n=n.toLowerCase();
+  /* an explicit variant tag such as en-gb-x-fis#male_1-local overrides the base voice id */
+  if(/#female/.test(n))return "female";if(/#male/.test(n))return "male";
+  for(var i=0;i<VOICE_FEMALE.length;i++)if(VOICE_FEMALE[i].test(n))return "female";
+  for(var j=0;j<VOICE_MALE.length;j++)if(VOICE_MALE[j].test(n))return "male";
+  return "unknown";
 }
+function voiceLang(v){return String((v&&v.lang)||"").replace("_","-").toLowerCase();}
+function voiceRank(v){
+  var g=voiceGender(v),n=(v.name+" "+(v.voiceURI||"")).toLowerCase(),l=voiceLang(v),r=g==="male"?300:g==="unknown"?200:0;
+  if(/google uk english male/.test(n))r+=40;else if(/microsoft/.test(n)&&g==="male")r+=30+(/natural/.test(n)?5:0);else if(/-x-/.test(n)&&g==="male")r+=20;else if(g==="male")r+=10;
+  r+=(l.indexOf("en-gb")===0?15:l.indexOf("en-us")===0?10:l.indexOf("en")===0?5:0)+(v.localService?2:0)+(v.default?1:0);
+  return r;
+}
+function pickVoice(list,savedName){
+  var all=Array.prototype.slice.call(list||[]),en=all.filter(function(v){return voiceLang(v).indexOf("en")===0;}),pool=en.length?en:all;
+  var ordered=pool.slice().sort(function(a,b){return voiceRank(b)-voiceRank(a)||String(a.name).localeCompare(String(b.name));});
+  var clearSaved=false,chosen=null;
+  if(savedName){var sv=pool.filter(function(v){return v.name===savedName;})[0];if(sv&&voiceGender(sv)!=="female")chosen=sv;else if(sv)clearSaved=true;}
+  if(!chosen)chosen=ordered[0]||null;
+  var g=chosen?voiceGender(chosen):"unknown";
+  return {voice:chosen,gender:g,lowered:g!=="male",pitch:g==="male"?0.75:0.6,ordered:ordered,clearSaved:clearSaved,
+    anyMale:ordered.some(function(v){return voiceGender(v)==="male";})};
+}
+/* ---- end voice gender ---- */
+
+/* ---- voice selection and saved settings ---- */
+var synth=window.speechSynthesis,voices=[],muted=false,STORE="identity-runtime.talk.v1",saved={},pitchAuto=true;
+try{saved=JSON.parse(localStorage.getItem(STORE)||"{}")||{};}catch(e){saved={};}
+function save(){var o=$("voiceSel").options[$("voiceSel").selectedIndex];saved={voice:o&&o.dataset.name||"",rate:$("rate").value,pitch:pitchAuto?"":$("pitch").value,muted:muted};try{localStorage.setItem(STORE,JSON.stringify(saved));}catch(e){}}
+var GLABEL={male:"Male",unknown:"Gender unknown",female:"Female"};
 function loadVoices(){
   if(!synth)return;
-  voices=synth.getVoices().filter(function(v){return /^en/i.test(v.lang);}).sort(function(a,b){return voiceScore(b)-voiceScore(a)||a.name.localeCompare(b.name);});
+  var r=pickVoice(synth.getVoices(),saved.voice);
+  if(r.clearSaved){saved.voice="";save();}
+  voices=r.ordered;
   var sel=$("voiceSel");sel.innerHTML="";
-  if(!voices.length){var o=document.createElement("option");o.textContent="Default browser voice";o.value="";sel.appendChild(o);return;}
-  voices.forEach(function(v,i){var o=document.createElement("option");o.value=String(i);o.dataset.name=v.name;o.textContent=v.name+" ("+v.lang+")";sel.appendChild(o);});
-  var idx=0;if(saved.voice){voices.forEach(function(v,i){if(v.name===saved.voice)idx=i;});}
-  sel.value=String(idx);
+  if(!voices.length){var o=document.createElement("option");o.textContent="Default browser voice (gender unknown)";o.value="";sel.appendChild(o);}
+  voices.forEach(function(v,i){var o=document.createElement("option");o.value=String(i);o.dataset.name=v.name;o.textContent=GLABEL[voiceGender(v)]+": "+v.name+" ("+v.lang+")";sel.appendChild(o);});
+  if(r.voice)sel.value=String(voices.indexOf(r.voice));
+  if(pitchAuto){$("pitch").value=String(r.pitch);upd();}
+  noteFor(r.gender);
+}
+function noteFor(g){
+  var n=$("voiceNote");
+  if(g==="male"){n.hidden=true;n.textContent="";return;}
+  n.hidden=false;
+  n.textContent=g==="female"?"This voice sounds female. Pick a male voice above if one is listed.":
+    "No voice on this device is known to be male, so the guide uses a lowered pitch. On Android: Settings, then Text-to-speech output, then the settings for Speech Services by Google, then Install voice data; choose English and select a male voice, then reload this page. Chrome on Android usually speaks with the voice chosen there.";
 }
 function pickedVoice(){return voices[Number($("voiceSel").value)]||null;}
 if(saved.rate)$("rate").value=saved.rate;
-if(saved.pitch)$("pitch").value=saved.pitch;
-if(synth){loadVoices();if("onvoiceschanged" in synth)synth.onvoiceschanged=loadVoices;}
+if(saved.pitch){$("pitch").value=saved.pitch;pitchAuto=false;}
+if(synth){
+  loadVoices();
+  if(synth.addEventListener)synth.addEventListener("voiceschanged",loadVoices);else synth.onvoiceschanged=loadVoices;
+  [250,1000,3000].forEach(function(ms){setTimeout(function(){if(!voices.length)loadVoices();},ms);});
+  var firstTap=function(){
+    document.removeEventListener("pointerdown",firstTap,true);document.removeEventListener("keydown",firstTap,true);
+    if(!voices.length){try{var w=new SpeechSynthesisUtterance(" ");w.volume=0;synth.speak(w);}catch(e){}}
+    loadVoices();setTimeout(loadVoices,300);setTimeout(loadVoices,1200);
+  };
+  document.addEventListener("pointerdown",firstTap,true);document.addEventListener("keydown",firstTap,true);
+}
 else{$("voiceControls").hidden=true;$("noVoice").hidden=false;}
 function upd(){$("rateVal").textContent=$("rate").value;$("pitchVal").textContent=$("pitch").value;}
-["rate","pitch"].forEach(function(id){$(id).addEventListener("input",upd);$(id).addEventListener("change",save);});
-$("voiceSel").addEventListener("change",save);upd();
+$("rate").addEventListener("input",upd);$("rate").addEventListener("change",save);
+$("pitch").addEventListener("input",upd);$("pitch").addEventListener("change",function(){pitchAuto=false;save();});
+$("voiceSel").addEventListener("change",function(){var v=pickedVoice();noteFor(v?voiceGender(v):"unknown");if(pitchAuto&&v){$("pitch").value=voiceGender(v)==="male"?"0.75":"0.6";upd();}save();});upd();
+$("testVoice").addEventListener("click",function(){loadVoices();speak("Hello. This is the voice the guide will use for its scripted answers.",true);});
 function setMuted(m){muted=m;var b=$("mute");b.setAttribute("aria-pressed",String(m));b.textContent=m?"Unmute voice":"Mute voice";}
 setMuted(!!saved.muted);
 $("mute").addEventListener("click",function(){setMuted(!muted);save();if(muted)stopSpeech();});
 $("stop").addEventListener("click",stopSpeech);
-$("reset").addEventListener("click",function(){try{localStorage.removeItem(STORE);}catch(e){}saved={};$("rate").value="0.9";$("pitch").value="0.75";setMuted(false);loadVoices();upd();});
+$("reset").addEventListener("click",function(){try{localStorage.removeItem(STORE);}catch(e){}saved={};pitchAuto=true;$("rate").value="0.9";setMuted(false);loadVoices();upd();});
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape")stopSpeech();});
 function canAutoSpeak(){var ua=navigator.userActivation;return !ua||ua.hasBeenActive;}
 function speak(text,force){

@@ -230,6 +230,72 @@ def test_fallback_timeline_is_ordered_and_covers_the_text():
     assert 8 <= rate <= 25  # characters per second at rate 0.9, in the range of typical browser voices
 
 
+def _js_block(start, end):
+    page = TEMPLATE.read_text(encoding="utf-8")
+    return page.split(start)[1].split(end)[0]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_voice_selection_prefers_male_and_lowers_pitch_otherwise():
+    code = _js_block("/* ---- voice gender ---- */", "/* ---- end voice gender ---- */")
+    lists = {
+        "android_generic": [{"name": "English United Kingdom", "lang": "en-GB", "localService": True},
+                            {"name": "English United States", "lang": "en-US", "localService": True, "default": True}],
+        "android_ids": [{"name": "en-us-x-sfg-network", "lang": "en-US"}, {"name": "en-gb-x-gba-local", "lang": "en-GB"},
+                        {"name": "en-gb-x-rjs-network", "lang": "en-GB"}, {"name": "en-us-x-tpf-local", "lang": "en-US"}],
+        "android_us_ids": [{"name": "en-us-x-iob-local", "lang": "en_US"}, {"name": "en-us-x-iom-local", "lang": "en_US"}],
+        "windows": [{"name": "Microsoft Zira Desktop - English (United States)", "lang": "en-US"},
+                    {"name": "Microsoft Hazel Desktop - English (Great Britain)", "lang": "en-GB"},
+                    {"name": "Microsoft David Desktop - English (United States)", "lang": "en-US"}],
+        "edge_natural": [{"name": "Microsoft Aria Online (Natural) - English (United States)", "lang": "en-US"},
+                         {"name": "Microsoft Sonia Online (Natural) - English (United Kingdom)", "lang": "en-GB"},
+                         {"name": "Microsoft Ryan Online (Natural) - English (United Kingdom)", "lang": "en-GB"},
+                         {"name": "Microsoft Guy Online (Natural) - English (United States)", "lang": "en-US"}],
+        "macos": [{"name": "Samantha", "lang": "en-US", "default": True}, {"name": "Karen", "lang": "en-AU"},
+                  {"name": "Moira", "lang": "en-IE"}, {"name": "Daniel", "lang": "en-GB"}, {"name": "Alex", "lang": "en-US"}],
+        "chrome_desktop": [{"name": "Google US English", "lang": "en-US"}, {"name": "Google UK English Female", "lang": "en-GB"},
+                           {"name": "Google UK English Male", "lang": "en-GB"}, {"name": "Google Deutsch", "lang": "de-DE"}],
+        "only_female": [{"name": "Samantha", "lang": "en-US"}, {"name": "Google UK English Female", "lang": "en-GB"}],
+        "empty": [],
+    }
+    script = code + (
+        "const L=" + json.dumps(lists) + ";const out={};"
+        "for(const k in L){const r=pickVoice(L[k]);out[k]={name:r.voice&&r.voice.name,gender:r.gender,pitch:r.pitch,lowered:r.lowered,"
+        "order:r.ordered.map(v=>voiceGender(v))};}"
+        "const s1=pickVoice(L.chrome_desktop,'Google UK English Female');out.saved_female={name:s1.voice.name,clear:s1.clearSaved};"
+        "const s2=pickVoice(L.android_generic,'English United States');out.saved_unknown={name:s2.voice.name,clear:s2.clearSaved};"
+        "out.variants=['en-gb-x-rjs#female_1-local','en-gb-x-fis#male_1-local','en-us-x-tpd-network','en-us-x-iol-local','en-gb-x-gbd-local'].map(n=>voiceGender({name:n}));"
+        "console.log(JSON.stringify(out));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True).stdout)
+    assert out["android_ids"]["name"] == "en-gb-x-rjs-network" and out["android_ids"]["gender"] == "male"
+    assert out["android_us_ids"]["name"] == "en-us-x-iom-local"
+    assert out["windows"]["name"].startswith("Microsoft David")
+    assert out["edge_natural"]["name"].startswith("Microsoft Ryan")  # male, and en-GB preferred
+    assert out["macos"]["name"] == "Daniel"
+    assert out["chrome_desktop"]["name"] == "Google UK English Male"
+    for k in ["android_ids", "android_us_ids", "windows", "edge_natural", "macos", "chrome_desktop"]:
+        assert out[k]["gender"] == "male" and out[k]["pitch"] == 0.75 and out[k]["lowered"] is False, k
+        order = out[k]["order"]
+        assert order == sorted(order, key=["male", "unknown", "female"].index), k  # male voices listed first
+    # no voice known to be male: best non-female voice, lowered pitch
+    assert out["android_generic"]["name"] == "English United Kingdom"
+    assert out["android_generic"]["gender"] == "unknown" and out["android_generic"]["lowered"] and out["android_generic"]["pitch"] == 0.6
+    assert out["only_female"]["lowered"] and out["only_female"]["pitch"] == 0.6
+    assert out["empty"]["name"] is None and out["empty"]["pitch"] == 0.6
+    # a saved female choice is dropped; a saved unknown choice is kept
+    assert out["saved_female"] == {"name": "Google UK English Male", "clear": True}
+    assert out["saved_unknown"] == {"name": "English United States", "clear": False}
+    assert out["variants"] == ["female", "male", "male", "male", "male"]
+
+
+def test_voice_controls_and_note_present(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    assert 'id="testVoice"' in page and ">Test voice<" in page
+    assert 'id="voiceNote"' in page and "No voice on this device is known to be male, so the guide uses a lowered pitch." in page
+    assert "voiceschanged" in page and "pointerdown" in page
+
+
 def _luminance(hex_colour):
     h = hex_colour.lstrip("#")
     if len(h) == 3:
