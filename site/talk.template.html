@@ -120,7 +120,7 @@ body.still .msg{animation:none}
 <a class="sr" href="#ask">Skip to the question box</a>
 <header>
   <h1>Talk with the Tesla guide</h1>
-  <p class="notice" role="note"><strong>Fictional educational character.</strong> The Inventor's Notebook guide is inspired by the historical inventor Nikola Tesla (1856-1943). It is not Tesla himself and does not speak for him. Its answers are scripted in advance from cited sources; it is not an AI chatbot and generates nothing. Not affiliated with or endorsed by Tesla, Inc. Research prototype.</p>
+  <p class="notice" role="note"><strong>Fictional educational character.</strong> The Inventor's Notebook guide is inspired by the historical inventor Nikola Tesla (1856-1943). It is not Tesla himself and does not speak for him. This demo cannot generate an answer. It selects from a finite set of scripted, sourced answers using browser-side matching; it is not an AI chatbot. Not affiliated with or endorsed by Tesla, Inc. Research prototype.</p>
   <p class="status" id="status" aria-label="Runtime status">Persona tesla-edu-guide, committed through identity-runtime after two-person approval. This page performs one read-only educational action, respond_in_chat. send_email and spend_money are not available on this page.</p>
 </header>
 <main>
@@ -280,7 +280,7 @@ body.still .msg{animation:none}
   </div>
   <section class="static card" aria-labelledby="hSample">
     <h2 id="hSample">A few of the guide's scripted answers</h2>
-    <p>The guide answers only from a fixed list of hand-written notes, each with a source. These examples are part of the page itself, so they can be read without JavaScript.</p>
+    <p>The guide selects from a fixed list of hand-written notes, each with a source; it cannot generate an answer. These examples are part of the page itself, so they can be read without JavaScript.</p>
     <!--SAMPLE_QA-->
   </section>
   <section class="topics" aria-label="All scripted questions">
@@ -288,7 +288,7 @@ body.still .msg{animation:none}
   </section>
 </main>
 <footer>
-  <p><strong>Fictional educational character inspired by Nikola Tesla (1856-1943).</strong> Scripted answers written from the cited sources, matched to your words by simple keyword rules in your browser. Not Tesla himself, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc. Voices are your browser's synthetic voices, not recordings or imitations of Tesla. The talking figure is an original illustration, not a likeness of a real photo.</p>
+  <p><strong>Fictional educational character inspired by Nikola Tesla (1856-1943).</strong> This demo cannot generate an answer. It selects from a finite set of scripted, sourced answers using browser-side matching (simple keyword rules run in your browser). Not Tesla himself, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc. Voices are your browser's synthetic voices, not recordings or imitations of Tesla. The talking figure is an original illustration, not a likeness of a real photo.</p>
   <p>Privacy: this page makes no network requests of its own. It keeps your voice, rate, pitch and mute choices in this browser's localStorage and nothing else. If you use the microphone, speech recognition is done by your browser, which may send the audio to its maker's servers.</p>
   <p>Historical photo: Napoleon Sarony, c. 1890, public domain, <a href="https://commons.wikimedia.org/wiki/File:Tesla_circa_1890.jpeg">Wikimedia Commons file page</a>; see <a href="https://github.com/sparkainlp-x/identity-runtime/blob/main/CREDITS.md">CREDITS.md</a>.</p>
   <p><a href="index.html">Lifecycle demo</a> · <a href="animation.html">Animated walkthrough</a> · <a href="https://github.com/sparkainlp-x/identity-runtime">Source</a>. AGPL-3.0-only. Jean-François Brisson, Spark AI NLP, Fredericton, New Brunswick, Canada.</p>

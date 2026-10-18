@@ -12,7 +12,7 @@ from typing import Any
 from . import __version__
 from .runtime import ApprovalError, IdentityRuntime, RuntimeErrorBase
 from .ledger import LedgerIntegrityError
-from .signing import load_keyring, new_key, save_keyring, sign
+from .signing import lease_detail, load_keyring, module_detail, new_key, new_nonce, rollback_detail, save_keyring, sign
 from .store import StoreError
 
 DEFAULT_STATE = os.environ.get("IDENTITY_RUNTIME_STATE", ".identity-runtime")
@@ -75,9 +75,10 @@ def cmd_approve(args):
     modules = args.module
     if modules == ["all"]:
         modules = list(rt.current_identity(args.avatar)["pending"][mc])
+    proposal_id = rt.current_identity(args.avatar)["proposal_ids"].get(mc, "")
     out = []
     for module in modules:
-        token = _token(args, "module", args.avatar, mc, module)
+        token = _token(args, "module", args.avatar, mc, module_detail(module, proposal_id))
         out.append(rt.approve_module(args.avatar, mc, module, args.approver, signature=token))
     _print(out)
     return 0
@@ -85,9 +86,10 @@ def cmd_approve(args):
 
 def cmd_grant(args):
     rt = _runtime(args)
-    active = rt.current_identity(args.avatar)["active"] or ""
-    token = _token(args, "lease", args.avatar, active, args.capability)
-    _print(rt.grant_lease(args.avatar, args.capability, args.approver, args.max_actions, args.ttl, signature=token))
+    terms = rt.lease_terms(args.avatar, args.capability, args.max_actions, args.ttl)
+    nonce = new_nonce() if args.keyring else None
+    token = _token(args, "lease", args.avatar, terms["version"], lease_detail(terms, nonce or ""))
+    _print(rt.grant_lease(args.avatar, args.capability, args.approver, args.max_actions, args.ttl, signature=token, nonce=nonce))
     return 0
 
 
@@ -104,6 +106,27 @@ def cmd_approve_action(args):
     token = _token(args, "action", action["proof"]["avatar_id"], args.action_id, action["proof"]["capability"])
     _print(rt.approve_action(args.action_id, args.approver, signature=token))
     return 0
+
+
+def _stored_proof(rt: IdentityRuntime, action_id: str) -> dict:
+    _, _, action = rt._find_action(action_id)
+    if "proof_hash" not in action["proof"]:
+        raise ApprovalError(f"action {action_id} has no authorised proof (status {action['status']})")
+    return action["proof"]
+
+
+def cmd_check_proof(args):
+    rt = _runtime(args)
+    result = rt.check_proof(_stored_proof(rt, args.action_id))
+    _print(result)
+    return 0 if result["valid"] else 5
+
+
+def cmd_redeem(args):
+    rt = _runtime(args)
+    result = rt.redeem_proof(_stored_proof(rt, args.action_id), by=args.by)
+    _print(result)
+    return 0 if result["status"] == "redeemed" else 5
 
 
 def cmd_reject_action(args):
@@ -124,15 +147,16 @@ def cmd_rollback(args):
     rt = _runtime(args)
     ident = rt.current_identity(args.avatar)
     target = args.to or (ident["history"][-1] if ident["history"] else "")
-    token = _token(args, "rollback", args.avatar, target, ident["active"] or "")
-    _print(rt.rollback(args.avatar, args.approver, args.to, args.reason, signature=token))
+    nonce = new_nonce() if args.keyring else None
+    token = _token(args, "rollback", args.avatar, target, rollback_detail(ident["active"] or "", nonce or ""))
+    _print(rt.rollback(args.avatar, args.approver, args.to, args.reason, signature=token, nonce=nonce))
     return 0
 
 
 def cmd_clear_halt(args):
     rt = _runtime(args)
-    root = rt.current_identity(args.avatar)["identity_root"]
-    token = _token(args, "clear_halt", args.avatar, root, "")
+    halt_id = rt.current_identity(args.avatar)["halt_id"] or ""
+    token = _token(args, "clear_halt", args.avatar, halt_id, "")
     _print(rt.clear_halt(args.avatar, args.approver, args.reason, signature=token))
     return 0
 
@@ -194,6 +218,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("approve-action", help="approve a held action (consumes the lease once)")
     s.add_argument("action_id"); s.add_argument("--as", dest="approver", required=True); s.set_defaults(func=cmd_approve_action)
+
+    s = sub.add_parser("check-proof", help="read-only: would this action's proof redeem right now?")
+    s.add_argument("action_id"); s.set_defaults(func=cmd_check_proof)
+
+    s = sub.add_parser("redeem", help="consume an authorised action's proof once, right before the host acts")
+    s.add_argument("action_id"); s.add_argument("--by", default="host"); s.set_defaults(func=cmd_redeem)
 
     s = sub.add_parser("reject-action", help="reject a held action")
     s.add_argument("action_id"); s.add_argument("--as", dest="approver", required=True); s.add_argument("--reason", default=""); s.set_defaults(func=cmd_reject_action)

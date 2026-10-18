@@ -91,6 +91,8 @@ class HashChainLedger:
 
     def check_head(self, expected: dict[str, Any] | None) -> None:
         """Fail closed if the ledger is shorter than, or diverges from, a recorded head."""
+        if self.broken:
+            return  # keep the first, more specific reason (for example a hash mismatch)
         if not expected or expected.get("seq", -1) < 0:
             return
         seq = expected["seq"]
