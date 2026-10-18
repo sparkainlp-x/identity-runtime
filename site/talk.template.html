@@ -61,6 +61,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .msg.fallback{border-left-color:var(--red)}
 .msg .who{font-size:.72rem;color:var(--muted);margin-bottom:.15rem;text-transform:uppercase;letter-spacing:.06em}
 .msg p{margin:0}
+.msg p mark{background:#5a4a1c;color:#fff3cf;border-radius:.2em;padding:0 .12em;box-shadow:inset 0 -.12em 0 var(--gold)}
+@media (forced-colors:active){.msg p mark{background:Mark;color:MarkText;box-shadow:none}}
 .msg .meta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.45rem;font-size:.78rem;color:var(--muted)}
 .msg .meta button{padding:.2rem .6rem;font-size:.78rem}
 .thinking{display:flex;gap:.3rem;align-items:center;padding:.65rem .9rem}
@@ -404,8 +406,25 @@ var LEAD_CLOSE="Here is the closest note I have: ";
 var LEAD_OVERVIEW="I don't have a note on exactly that, so here is an overview instead. ";
 var OFF_TOPIC="I only cover Nikola Tesla and the history of electricity, from a fixed list of sourced notes, so I don't have an answer for that. Try one of the questions below.";
 function entryById(id){for(var i=0;i<E.length;i++)if(E[i].e.id===id)return E[i].e;return null;}
-/* Decide the reply. kind is "answer", "closest", "overview" or "offtopic"; it never dead-ends on an on-topic question. */
+function escapeHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+/* Escape the text first, then wrap the question's words (longer than 2 letters, longest first) in <mark> in a single pass.
+   Entities are matched and kept whole, so a word such as "amp" or "quot" can never split one, and "mark" never meets a tag. */
+function highlightMatches(text,query){
+  var html=escapeHtml(text),seen={},list=[];
+  toks(query).concat(rawToks(query)).forEach(function(t){if(t.length>2&&!seen[t]){seen[t]=1;list.push(t);}});
+  if(!list.length)return html;
+  list.sort(function(a,b){return b.length-a.length;});
+  /* a word matches with a common ending ("current" marks "currents"), but not as the start of another word ("direct" leaves "direction") */
+  var re=new RegExp("&(?:[a-z]+|#[0-9]+);|\\b(?:"+list.map(escapeRegExp).join("|")+")(?:s|es|e|ed|d|ing|ings|er|ers)?\\b","gi");
+  return html.replace(re,function(m){return m.charAt(0)==="&"?m:"<mark>"+m+"</mark>";});
+}
+/* Decide the reply. kind is "answer", "closest", "overview" or "offtopic"; it never dead-ends on an on-topic question.
+   text is plain (for speech, lip sync and captions); highlightedText is the same text, escaped, with matches marked. */
 function pick(query){
+  var p=choose(query);p.highlightedText=p.kind==="offtopic"?escapeHtml(p.text):highlightMatches(p.text,query);return p;
+}
+function choose(query){
   var r=score(query),best=r[0],top=best?best.x.e:null;
   function fill(list,n,skip){
     var out=[],seen={};if(skip)seen[skip]=1;
@@ -683,15 +702,16 @@ function speak(text,force){
 
 /* ---- chat ---- */
 var log=$("log");
-function add(who,text,cls){
+/* html, when given, must come from highlightMatches or escapeHtml: it is the only string ever set as innerHTML here */
+function add(who,text,cls,html){
   var m=document.createElement("div");m.className="msg "+cls;
   var w=document.createElement("div");w.className="who";w.textContent=who;m.appendChild(w);
-  var p=document.createElement("p");p.textContent=text;m.appendChild(p);
+  var p=document.createElement("p");if(typeof html==="string")p.innerHTML=html;else p.textContent=text;m.appendChild(p);
   log.appendChild(m);log.scrollTop=log.scrollHeight;return m;
 }
-function answer(e,isFallback,text){
+function answer(e,isFallback,text,html){
   var t=text||e.a;
-  var m=add("Guide (scripted)",t,"guide"+(e&&e.myth?" myth":"")+(isFallback?" fallback":""));
+  var m=add("Guide (scripted)",t,"guide"+(e&&e.myth?" myth":"")+(isFallback?" fallback":""),html);
   var meta=document.createElement("div");meta.className="meta";
   var b=document.createElement("button");b.type="button";b.textContent="Speak";b.setAttribute("aria-label","Speak this answer aloud");
   b.addEventListener("click",function(){speak(t,true);});
@@ -725,7 +745,7 @@ function ask(q){
   add("You",q,"you");
   var p=pick(q);
   think(reduce?250:Math.min(1100,450+q.length*8),function(){
-    answer(p.entry,p.kind==="offtopic",p.text);
+    answer(p.entry,p.kind==="offtopic",p.text,p.highlightedText);
     suggest(p.more);
   });
 }

@@ -435,3 +435,66 @@ def test_every_keyword_still_reaches_its_note(site):
     bad = json.loads(subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True).stdout)
     # "motor" alone goes to the general how-motors-work note; that was already so before synonyms were added
     assert [b[:2] for b in bad] == [["induction_motor", "motor"]], bad
+
+
+def _well_formed_marks(html):
+    # only <mark> and </mark> tags, never nested, always closed
+    tags = re.findall(r"<[^>]*>", html)
+    assert all(t in ("<mark>", "</mark>") for t in tags), tags
+    depth = 0
+    for t in tags:
+        depth += 1 if t == "<mark>" else -1
+        assert depth in (0, 1), html
+    assert depth == 0, html
+    assert "<mark></mark>" not in html
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_highlighted_text_is_escaped_and_well_formed(site):
+    import html as _html
+    attack = "<script>alert(1)</script>"
+    queries = ["tell me about electricity", "ac motor", "wardenclyffe", "mark", attack, "", "electrisity", "tesla", "amp quot"]
+    extra = (
+        "out.direct=[highlightMatches(" + json.dumps(attack) + "," + json.dumps(attack) + "),"
+        "highlightMatches('<mark>Mark</mark> marks & \"quotes\" 5 amps','mark amp quot'),"
+        "highlightMatches(" + json.dumps("Tesla's current, alternating current and currents in one direction") + ",'alternating direct current'),"
+        "highlightMatches('x <b onclick=1>y</b>','')];"
+    )
+    out = _pick_in_node(site, queries, extra)
+    got = out["picks"]
+    for q, p in got.items():
+        assert isinstance(p["html"], str) and p["html"], q
+        _well_formed_marks(p["html"])
+        # removing the marks and unescaping gives back exactly the plain text that is spoken
+        assert _html.unescape(p["html"].replace("<mark>", "").replace("</mark>", "")) == p["text"], q
+    assert "<mark>electricity</mark>" in got["tell me about electricity"]["html"].lower()
+    assert "<mark>wardenclyffe</mark>" in got["wardenclyffe"]["html"].lower()
+    assert "<mark>motor</mark>" in got["ac motor"]["html"].lower()
+    assert "<script" not in got[attack]["html"] and got[attack]["kind"] == "offtopic"
+    assert got[""]["kind"] == "offtopic" and "<mark>" not in got[""]["html"]
+    assert got["electrisity"]["kind"] == "closest" and got["tesla"]["kind"] == "overview"
+    attack_html, mark_html, cur_html, empty_html = out["direct"]
+    assert attack_html == "&lt;<mark>script</mark>&gt;<mark>alert</mark>(1)&lt;/<mark>script</mark>&gt;"
+    _well_formed_marks(mark_html)
+    assert mark_html == ("&lt;<mark>mark</mark>&gt;<mark>Mark</mark>&lt;/<mark>mark</mark>&gt; <mark>marks</mark> &amp; "
+                         "&quot;<mark>quotes</mark>&quot; 5 <mark>amps</mark>")
+    assert cur_html == "Tesla&#39;s <mark>current</mark>, <mark>alternating</mark> <mark>current</mark> and <mark>currents</mark> in one direction"
+    assert empty_html == "x &lt;b onclick=1&gt;y&lt;/b&gt;"
+
+
+def test_chat_bubble_renders_only_escaped_html_and_speaks_plain_text():
+    page = TEMPLATE.read_text(encoding="utf-8")
+    script = page.split("<script>")[1]
+    # innerHTML is only ever cleared, or set from the html argument of add(), which ask() fills with pick().highlightedText
+    sets = re.findall(r"(\w+(?:\.\w+)*)\.innerHTML\s*=\s*([^;]+);", script)
+    assert sorted(v for _, v in sets) == ['""', '""', "html"], sets
+    assert "insertAdjacentHTML" not in script and "outerHTML" not in script and "document.write" not in script
+    assert "answer(p.entry,p.kind===\"offtopic\",p.text,p.highlightedText)" in script
+    answer_fn = script.split("function answer(")[1].split("\nvar lastAnswer")[0]
+    # speech, lip sync and captions get the plain text t; the marked-up html only reaches add()
+    assert "speak(t,true)" in answer_fn and "lastAnswer=t;speak(t);" in answer_fn
+    assert answer_fn.count("html") == 2  # the parameter and the add() argument
+    assert not re.search(r"(speak|startSpeech|setCaption|chunkText|buildTimeline)\([^)]*(html|highlightedText)", script)
+    style = re.search(r"<style>(.*?)</style>", page, re.S).group(1)
+    assert re.search(r"\.msg p mark\{[^}]*background:#5a4a1c[^}]*color:#fff3cf", style)
+    assert "@media (forced-colors:active){.msg p mark{background:Mark;color:MarkText" in style
