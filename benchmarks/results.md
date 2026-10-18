@@ -37,9 +37,9 @@ These attacks get through today. They are counted here rather than as false appr
 
 | Store | Path | n | Mean (ms) | Median (ms) |
 |---|---|---:|---:|---:|
-| in_memory | authorised | 50 | 4.492 | 4.499 |
-| in_memory | denied | 50 | 0.274 | 0.272 |
-| file_backed | authorised | 50 | 6.554 | 6.512 |
-| file_backed | denied | 50 | 1.27 | 1.196 |
+| in_memory | authorised | 50 | 5.028 | 4.933 |
+| in_memory | denied | 50 | 0.308 | 0.303 |
+| file_backed | authorised | 50 | 7.13 | 7.048 |
+| file_backed | denied | 50 | 1.593 | 1.446 |
 
 time.perf_counter() around one IdentityRuntime.request_action() call. 'authorised' runs every check plus the 61,440-channel OES-61440 evaluation and records a proof; 'denied' fails the context check before the tripwire runs. 'file_backed' adds ledger fsync and an atomic state.json write. Indicative only; varies by machine and Python version.
