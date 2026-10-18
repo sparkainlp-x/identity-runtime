@@ -3,11 +3,17 @@ import copy
 import json
 
 import pytest
-
 from conftest import ROOT, commit
+
 from identity_runtime import ApprovalError, IdentityRuntime, LedgerIntegrityError
 from identity_runtime.cli import main
-from identity_runtime.signing import lease_detail, module_detail, new_key, rollback_detail, sign
+from identity_runtime.signing import (
+    lease_detail,
+    module_detail,
+    new_key,
+    rollback_detail,
+    sign,
+)
 
 A = "tesla-edu-guide"
 NONCE = "n" * 16
