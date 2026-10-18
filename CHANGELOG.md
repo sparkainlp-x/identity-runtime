@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Replay fixes found by the adversarial benchmark (all four are now rejected in every benchmark attempt, and CI fails if one is accepted again):
+  - **Single-use, current-only proofs.** New `redeem_proof(proof, by="host")` consumes a proof once, right before the host acts. It refuses a proof that has been redeemed, whose lease is revoked or expired, whose version is no longer active, or whose avatar is halted. Redemptions are persisted (action status `redeemed` in `state.json`) and logged (`proof_redeemed`, `proof_redemption_refused`). There is a new read-only `check_proof()` (returns the reason) and `proof_in_ledger()` (a historical, audit-only lookup). The CLI adds `redeem` and `check-proof`.
+  - **Lease tokens** bind a nonce and the full effective terms from the new read-only `lease_terms()`: avatar, version, policy hash, capability, contexts, human-review flag, `max_actions` and TTL. `grant_lease()` gains `nonce=`. Used nonces are recorded in `state.json`. A reused nonce or different terms are refused, and with a keyring a nonce is required.
+  - **Rollback tokens** also bind a single-use nonce (`rollback(..., nonce=)`).
+  - **Halt resets.** Each halt gets a `halt_id`, which is returned by `request_action`, shown by `current_identity()` and logged. `clear_halt` tokens bind it, so a token clears only that halt.
+  - **Module approvals** bind the upload's `proposal_id`, which `receive_personality()` returns and `current_identity()["proposal_ids"]` lists. Re-uploading a superseded manifest creates a new proposal that needs fresh approvals.
+  - **Ledger error message.** The read-only error after tampering now keeps the specific reason (for example "line 8 hash does not match its content") instead of a misleading "lines may have been removed".
+  - **Helpers.** New `signing.module_detail`, `lease_detail`, `rollback_detail` and `new_nonce`.
+- **Compatibility (breaking):**
+  - `verify_proof()` is now current-only and read-only. It returns False once a proof is redeemed, its lease is revoked or expired, its version is replaced or the avatar is halted. Use `proof_in_ledger()` for the old "was it ever authorised" answer.
+  - With a keyring, module, lease, rollback and clear_halt tokens made for 0.1.0 no longer verify. Sign the new detail strings instead; the CLI does this automatically.
+  - State written by 0.1.0 still loads:
+    - a version pending from before has proposal id `""`;
+    - an avatar halted before has halt id `legacy-<identity_root>`;
+    - `used_nonces` starts empty.
+  - Calls without a keyring keep working unchanged, since `nonce` is optional there.
 - Governance hardening (no version bump): THREAT-MODEL.md (assets, trusted parties, host obligations, adversaries, out of scope, operator-controlled state and ledger, residual risks) and docs/ARCHITECTURE.md with a mermaid boundary diagram, both linked from the README.
 - `benchmarks/adversarial.py`: seeded, deterministic, standard-library adversarial benchmark over the public API (unapproved activation, expired leases, budget exhaustion, scope escalation, use after rollback or halt, ledger tampering, forged and replayed proofs and tokens) with committed `benchmarks/results.json` and `results.md`, tests, and a CI step that fails on any false approval. Committed run: 0 false approvals in 1,304 attacks; it also reports what gets through today (operator-level ledger rewrites, replay of proofs and of lease, clear_halt and module HMAC tokens) and that a send_email lease of two or more units halts the avatar part-way through.
 - README leads with the research question and a five-minute quickstart verified from a clean checkout (validate, upload, approve, lease, authorise, held action, second version, rollback, verify), then architecture, threat model and benchmark; the Tesla pages are the secondary demo. New Open questions and Research collaboration sections; new limitations on replay.

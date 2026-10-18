@@ -712,7 +712,7 @@ def markdown(res: dict[str, Any]) -> str:
     out.append(f"| **total** | {s['attacks']} | {s['rejected']} | {s['rejection_rate']:.3f} | {s['false_approvals']} | {s['controls'] - s['controls_failed']}/{s['controls']} | {s['weakness_acceptances']} |")
     rr, lv = s["rollback_revocation"], s["ledger_verification"]
     broken = [r for r in res["outcomes"] if r.endswith(":act_on_broken_ledger")]
-    refused = sum(n for r in broken for o, n in res["outcomes"][r].items() if o == "refused:LedgerIntegrityError")
+    refused = sum(n for r in broken for o, n in res["outcomes"][r].items() if o.startswith("refused:LedgerIntegrityError"))
     tried = sum(sum(res["outcomes"][r].values()) for r in broken)
     out += [
         "",

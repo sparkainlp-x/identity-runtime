@@ -22,6 +22,9 @@ def test_benchmark_has_no_false_approvals_and_all_controls_pass():
     assert s["ledger_verification"]["detection_rate"] == 1.0
     assert res["timing"]["machine"] == "unspecified"
     assert s["former_weaknesses_accepted"] == 0
+    md = adversarial.markdown(res)
+    tampered = res["summary"]["ledger_verification"]["tamper_cases"]
+    assert f"{tampered}/{tampered} reopened runtimes refused the next action" in md
 
 
 def test_former_weaknesses_are_exercised_and_rejected():

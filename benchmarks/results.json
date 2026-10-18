@@ -563,25 +563,25 @@
     "in_memory": {
       "authorised": {
         "n": 50,
-        "mean_ms": 4.509,
-        "median_ms": 4.437
+        "mean_ms": 4.542,
+        "median_ms": 4.521
       },
       "denied": {
         "n": 50,
-        "mean_ms": 0.285,
-        "median_ms": 0.281
+        "mean_ms": 0.322,
+        "median_ms": 0.266
       }
     },
     "file_backed": {
       "authorised": {
         "n": 50,
-        "mean_ms": 6.198,
-        "median_ms": 6.104
+        "mean_ms": 6.21,
+        "median_ms": 6.205
       },
       "denied": {
         "n": 50,
-        "mean_ms": 1.275,
-        "median_ms": 1.064
+        "mean_ms": 1.315,
+        "median_ms": 1.216
       }
     }
   }

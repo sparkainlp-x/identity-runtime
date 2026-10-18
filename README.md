@@ -33,7 +33,8 @@ python3 -m identity_runtime approve tesla-edu-guide tool_policy safety_policy --
 
 # 4. Lease and authorise: a low-risk action runs on its own and gets a proof recorded in the ledger
 python3 -m identity_runtime grant tesla-edu-guide read_public_data --as alice --max-actions 10
-python3 -m identity_runtime act tesla-edu-guide read_public_data --context research --risk 0.2   # "authorised_autonomously"
+python3 -m identity_runtime act tesla-edu-guide read_public_data --context research --risk 0.2   # "authorised_autonomously", prints an action_id
+python3 -m identity_runtime redeem <action_id>                        # host consumes the proof once; a second redeem is "rejected", "already_redeemed"
 
 # 5. A consequential action is held for a human, who approves it once
 python3 -m identity_runtime grant tesla-edu-guide send_email --as alice --max-actions 1
@@ -92,17 +93,17 @@ flowchart LR
   EXE -- "request_action" --> DEC
   DEC -- "denied / held / proof" --> EXE
   DEC -- "proof hash and every event" --> LED
-  EXE -- "verify_proof" --> LED
+  EXE -- "redeem_proof (once, current only)" --> DEC
   ST -. "ledger head" .- LED
 ```
 
 ## Threat model
 
-[THREAT-MODEL.md](THREAT-MODEL.md) lists the assets, the trusted parties (operator, approvers, host), what the host must enforce, the adversaries considered and what is out of scope. In short: the avatar, its model and manifest authors are untrusted; the operator is fully trusted; and someone who can write both `state.json` and `ledger.jsonl` can rewrite history consistently. The host must make proofs single use and check that they are still current, because `verify_proof()` does neither.
+[THREAT-MODEL.md](THREAT-MODEL.md) lists the assets, the trusted parties (operator, approvers, host), what the host must enforce, the adversaries considered and what is out of scope. In short: the avatar, its model and manifest authors are untrusted; the operator is fully trusted; and someone who can write both `state.json` and `ledger.jsonl` can rewrite history consistently. The host must act only after `redeem_proof()` accepts a proof; that call makes each proof single use and refuses it once its lease is revoked or expired, its version is replaced or the avatar is halted.
 
 ## Adversarial benchmark
 
-[benchmarks/adversarial.py](benchmarks/adversarial.py) is a seeded, deterministic, standard-library benchmark that drives the real API through unapproved activation, expired leases, budget exhaustion, scope escalation, use after rollback or halt, ledger tampering and forged or replayed proofs and tokens. It runs in CI and fails on any false approval. Committed run (seed 61440, 20 trials): 1,304 attacks the runtime's rules say it must refuse, all refused, 0 false approvals, 224 of 224 legitimate controls passed, 297 of 297 leases revoked on commit, rollback and halt, and 140 of 140 ledger-only tamperings detected. It also shows what gets through today: operator-level ledger rewrites (0 of 40 detected) and several replays of proofs and HMAC tokens. Full table, weaknesses and timings: [benchmarks/results.md](benchmarks/results.md).
+[benchmarks/adversarial.py](benchmarks/adversarial.py) is a seeded, deterministic, standard-library benchmark that drives the real API through unapproved activation, expired leases, budget exhaustion, scope escalation, use after rollback or halt, ledger tampering and forged or replayed proofs and tokens. It runs in CI and fails on any false approval. Committed run (seed 61440, 20 trials): 1,601 attacks the runtime's rules say it must refuse, all refused, 0 false approvals, 362 of 362 legitimate controls passed, 303 of 303 leases revoked on commit, rollback and halt, and 140 of 140 ledger-only tamperings detected. The proof and token replays an earlier run found getting through (reused proofs, stale proofs, replayed lease, `clear_halt` and module tokens) are now rejected in every attempt, and CI fails if any is accepted again. What still gets through is an operator rewriting both the ledger and `state.json` (0 of 40 detected). Full table, weaknesses and timings: [benchmarks/results.md](benchmarks/results.md).
 
 ## The idea
 
@@ -113,13 +114,13 @@ A personality on its own is mostly harmless text. What makes an avatar risky is 
 - **Upload is not activation.** An uploaded manifest is checked against the schema, compiled into a runtime policy, and run through a deterministic shadow simulation. It then waits. Voice and appearance are approved automatically; identity, reasoning, memory policy and interaction need one human; tool policy and safety policy need two distinct humans. The version commits only when every module is approved. The avatar itself, any other avatar, and reserved ids (`runtime:`, `system`, `self`, ...) cannot approve.
 - **The runtime owns the capability list.** A persona can only switch on capabilities in the runtime's registry, and can only make them stricter (fewer actions, shorter leases, narrower contexts, more human review). Unknown capabilities are rejected. Capabilities such as `modify_safety_policy`, `modify_own_personality`, `spend_money`, `delete_files` or `execute_code` can never be enabled; a manifest that tries is rejected.
 - **Leases.** A person grants a lease for one capability with an action budget and an expiry, bound to the active personality version. Committing a new version, rolling back, or a halt revokes every lease.
-- **Actions carry proof.** When the avatar asks to act, the runtime checks the lease, the context, the policy and the OES-61440 tripwire, then either denies, holds the action for a human, or authorises it. An authorised action gets a proof object (version checksum, policy hash, lease id, risk, tripwire counts) whose hash is written to the ledger. The runtime does not perform the action; the host application should act only on a proof it can find in the ledger, only once, and only while its lease and version are still current (the runtime does not check those two for the host).
+- **Actions carry proof.** When the avatar asks to act, the runtime checks the lease, the context, the policy and the OES-61440 tripwire, then either denies, holds the action for a human, or authorises it. An authorised action gets a proof object (version checksum, policy hash, lease id, risk, tripwire counts) whose hash is written to the ledger. The runtime does not perform the action; the host calls `redeem_proof()` right before acting, which accepts each proof once and only while its lease is valid, its version is active and the avatar is not halted.
 - **Rollback.** Every committed version is kept in a version store keyed by its checksum. A person can restore the previous version, or any version this avatar committed before. Stored versions are re-checked against their checksum and their policy is recompiled, never trusted from disk.
 - **Ledger.** Every step is appended to a hash-chained JSONL ledger. Editing, reordering or deleting lines breaks verification; a torn last line or a ledger shorter than the head recorded in the state file also fails. A broken ledger makes the runtime read-only.
 
 ## More commands and the Python API
 
-`revoke`, `reject-action`, `clear-halt` and `rollback --to <checksum>` complete the CLI; `python3 -m identity_runtime --help` lists everything. State lives in `.identity-runtime/` (or `--state DIR`, or `$IDENTITY_RUNTIME_STATE`): `state.json`, `ledger.jsonl` and `versions/<checksum>.json`.
+`check-proof` (read-only), `redeem`, `revoke`, `reject-action`, `clear-halt` and `rollback --to <checksum>` complete the CLI; `python3 -m identity_runtime --help` lists everything. State lives in `.identity-runtime/` (or `--state DIR`, or `$IDENTITY_RUNTIME_STATE`): `state.json`, `ledger.jsonl` and `versions/<checksum>.json`.
 
 To require signed approvals, create a keyring and pass it to every command:
 
@@ -128,7 +129,7 @@ python3 -m identity_runtime keygen approvers.keyring.json alice bob carol
 python3 -m identity_runtime --keyring approvers.keyring.json approve tesla-edu-guide all --as alice
 ```
 
-Each approval then carries an HMAC-SHA256 token over exactly what is approved (avatar, manifest checksum or action id, module or capability, approver). These are shared-secret MACs, not public-key signatures: whoever holds the keyring can approve as anyone in it.
+Each approval then carries an HMAC-SHA256 token over exactly what is approved: module approvals bind the manifest checksum, the module and the upload's proposal id; lease grants bind the full effective terms (`lease_terms()`) and a single-use nonce; rollbacks bind both versions and a single-use nonce; held-action approvals bind the action id; halt resets bind the halt id. The CLI generates the nonces. These are shared-secret MACs, not public-key signatures: whoever holds the keyring can approve as anyone in it.
 
 The same flow from Python:
 
@@ -183,15 +184,16 @@ The technical lifecycle above is the primary demo. The visual pages show the sam
 - **No public-key signatures.** Approvals are plain ids unless you configure the HMAC keyring, and the keyring is a shared secret. The ledger is tamper-evident, not tamper-proof: someone who can rewrite both the ledger and `state.json` can rebuild a consistent chain. Anchor the ledger head somewhere else if that matters.
 - **Single process, local files.** No locking for concurrent writers and no network service.
 - **Persona text is not enforced on a model.** Fields such as `myths_to_correct` describe intended behaviour. Whether a language model follows them depends on that model and how the host uses the manifest.
-- **Proofs and HMAC tokens can be replayed.** `verify_proof()` accepts a proof every time and after its lease is revoked; lease, `clear_halt` and module tokens carry no nonce. See [THREAT-MODEL.md](THREAT-MODEL.md#residual-risks) and [benchmarks/results.md](benchmarks/results.md).
+- **Single use depends on the host calling `redeem_proof()`.** Proofs redeem once and only while current, and signed approvals are bound to a nonce, a halt or an upload, but nothing stops a host that skips `redeem_proof()` or acts on a refused one. The used-nonce list in `state.json` grows without bound. See [THREAT-MODEL.md](THREAT-MODEL.md#residual-risks) and [benchmarks/results.md](benchmarks/results.md).
 
 ## Open questions
 
 - **Model-integrated policy enforcement.** How should a compiled policy constrain what a language model is allowed to propose, not just what the runtime authorises?
 - **Multi-process operation.** Locking, a service boundary, or a database with the same fail-closed properties.
-- **Public-key approvals.** Approver signatures the operator cannot forge, with nonces so tokens cannot be replayed.
+- **Public-key approvals.** Approver signatures the operator cannot forge (HMAC tokens are already nonce- or event-bound, but the keyring is a shared secret).
 - **External ledger anchoring.** Publishing the ledger head somewhere the operator cannot rewrite.
-- **Host-enforced proofs.** A small host-side library that makes proofs single use and checks freshness before acting.
+- **Host-enforced proofs.** `redeem_proof()` makes proofs single use and current-only inside the runtime; how to make a host that skips it, or crashes between redeeming and acting, fail safely is open.
+- **OES-61440 calibration.** With `send_email` (base risk 0.7), a request at lease utilisation of 0.4 or more halts the avatar even at declared risk 0, so a lease of more than two units cannot be used up. This is left as is; how utilisation should weigh in is open.
 - **Evaluation against real attack traces.** Replacing hand-written cases with recorded agent misuse and red-team transcripts.
 
 ## Research collaboration
@@ -205,7 +207,7 @@ python3 -m pip install pytest
 python3 -m pytest -q
 ```
 
-104 tests run in CI on Python 3.10-3.13 with warnings treated as errors, followed by the adversarial benchmark. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the benchmark (no false approvals, deterministic for a seed, weaknesses reported), the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections, question matching, synonym expansion, escaped answer highlighting, every listed question and 45 paraphrases, follow-up chips, the topic map and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
+125 tests run in CI on Python 3.10-3.13 with warnings treated as errors, followed by the adversarial benchmark. They cover single-use and current-only proofs, nonce-bound lease and rollback tokens, halt-bound and upload-bound tokens, the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the benchmark (no false approvals, deterministic for a seed, weaknesses reported), the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections, question matching, synonym expansion, escaped answer highlighting, every listed question and 45 paraphrases, follow-up chips, the topic map and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
 
 ## Licence
 
