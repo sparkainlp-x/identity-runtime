@@ -616,7 +616,6 @@
         "colorado",
         "colorado springs",
         "1899",
-        "lightning",
         "artificial lightning",
         "magnifying transmitter",
         "laboratory"
@@ -1087,7 +1086,7 @@
         "read",
         "book",
         "books",
-        "biography",
+        "biography book",
         "learn more",
         "recommend",
         "my inventions",
@@ -1141,6 +1140,221 @@
       "source": {
         "title": "Wikipedia: Electromagnet",
         "url": "https://en.wikipedia.org/wiki/Electromagnet"
+      }
+    },
+    {
+      "id": "who_was_tesla",
+      "topic": "life",
+      "myth": false,
+      "q": "Who was Nikola Tesla?",
+      "keywords": [
+        "who was tesla",
+        "who was nikola",
+        "life",
+        "biography",
+        "bio",
+        "life story",
+        "overview",
+        "summary",
+        "his life",
+        "about him"
+      ],
+      "a": "Nikola Tesla (1856-1943) was an inventor and electrical engineer. He was born in Smiljan, then in the Austrian Empire and now in Croatia, to a Serbian family. He studied in Graz, worked in Budapest and Paris, and moved to New York in 1884, where he worked briefly for Edison's company. His polyphase AC motor patents of 1888, licensed to George Westinghouse, made his name, followed by the Tesla coil, lighting demonstrations, radio remote control and the unfinished Wardenclyffe Tower. He died in a New York hotel room in January 1943. I am a scripted guide inspired by him, not Tesla himself.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla"
+      }
+    },
+    {
+      "id": "what_is_electricity",
+      "topic": "science",
+      "myth": false,
+      "q": "What is electricity?",
+      "keywords": [
+        "what is electricity",
+        "explain electricity",
+        "electricity",
+        "electric",
+        "charge",
+        "voltage",
+        "volt",
+        "volts"
+      ],
+      "a": "Electricity is what happens when electric charge builds up or moves. Charge is a basic property of matter: electrons carry negative charge and protons positive charge. A flow of charge is a current, measured in amperes. Voltage is the push that drives it, measured in volts, a little like water pressure in a pipe. Nobody invented electricity; people such as Benjamin Franklin, Alessandro Volta, Michael Faraday and James Clerk Maxwell studied it long before my namesake. His contribution came later: practical alternating-current motors and power systems.",
+      "source": {
+        "title": "Wikipedia: Electricity",
+        "url": "https://en.wikipedia.org/wiki/Electricity"
+      }
+    },
+    {
+      "id": "electric_current",
+      "topic": "science",
+      "myth": false,
+      "q": "How does electricity flow in a circuit?",
+      "keywords": [
+        "electricity work",
+        "electricity works",
+        "how electricity",
+        "electricity flow",
+        "flow of electricity",
+        "current",
+        "amp",
+        "amps",
+        "ampere",
+        "circuit",
+        "wire",
+        "wires",
+        "ohm",
+        "resistance"
+      ],
+      "a": "An electric current is a flow of charge, usually electrons drifting through a metal wire. It flows only around a complete loop, called a circuit: a battery or generator provides the push, the wires carry the current, and a lamp or motor uses the energy. The push is the voltage, the flow is the current in amperes, and the resistance of the path limits how much flows. Ohm's law links them: voltage equals current times resistance. In direct current the flow goes one way; in alternating current it reverses direction, 50 or 60 times a second in most mains supplies.",
+      "source": {
+        "title": "Wikipedia: Electric current",
+        "url": "https://en.wikipedia.org/wiki/Electric_current"
+      }
+    },
+    {
+      "id": "tesla_and_electricity",
+      "topic": "ac",
+      "myth": false,
+      "q": "What did Tesla do for electricity?",
+      "keywords": [
+        "do for electricity",
+        "role in electricity",
+        "contribution",
+        "contributions",
+        "contribute",
+        "known for",
+        "famous for",
+        "achievement",
+        "achievements"
+      ],
+      "a": "His main contributions were to alternating-current power. He patented a polyphase induction motor and AC system from 1888, and Westinghouse licensed those patents. That work fed into the AC lighting at the 1893 Chicago World's Fair and the Niagara Falls power plant, which began sending power to Buffalo in 1896. He also patented the Tesla coil in 1891, gave high-frequency lighting demonstrations and showed radio remote control in 1898. He did not discover electricity, and many engineers, including Galileo Ferraris, William Stanley and the Westinghouse team, built the AC system alongside him.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla"
+      }
+    },
+    {
+      "id": "electromagnetism",
+      "topic": "science",
+      "myth": false,
+      "q": "How are electricity and magnetism connected?",
+      "keywords": [
+        "electricity and magnetism",
+        "magnet",
+        "magnets",
+        "magnetism",
+        "magnetic",
+        "electromagnetism",
+        "electromagnetic",
+        "faraday",
+        "oersted",
+        "compass",
+        "induction"
+      ],
+      "a": "They are two sides of one force. In 1820 Hans Christian Oersted saw that an electric current moves a compass needle, so a current makes a magnetic field. In 1831 Michael Faraday showed the reverse: a changing magnetic field induces a current in a nearby wire. This is electromagnetic induction, and generators, transformers and motors all depend on it. James Clerk Maxwell later described electricity, magnetism and light with one set of equations. Tesla's induction motor uses a rotating magnetic field to induce currents in its rotor.",
+      "source": {
+        "title": "Wikipedia: Electromagnetic induction",
+        "url": "https://en.wikipedia.org/wiki/Electromagnetic_induction"
+      }
+    },
+    {
+      "id": "inventions_overview",
+      "topic": "inventions",
+      "myth": false,
+      "q": "What did Tesla invent?",
+      "keywords": [
+        "what did he invent",
+        "his inventions",
+        "invent",
+        "invention",
+        "inventions",
+        "inventor",
+        "creations",
+        "devices"
+      ],
+      "a": "His best-documented inventions are the polyphase AC induction motor and AC power system patents of 1887 and 1888; the Tesla coil, a resonant transformer for high-frequency high voltage, patented in 1891; high-frequency and wireless lighting demonstrations in the 1890s; a radio-controlled boat shown in 1898; and the bladeless Tesla turbine, patented in 1913. He held around 300 patents worldwide. He did not invent electricity or the light bulb, and radio grew out of the work of many people.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla"
+      }
+    },
+    {
+      "id": "power_grid_today",
+      "topic": "ac",
+      "myth": false,
+      "q": "How does the power grid work today?",
+      "keywords": [
+        "power grid",
+        "electric grid",
+        "electricity get to",
+        "electricity come from",
+        "power line",
+        "power lines",
+        "power station",
+        "grid",
+        "transformer",
+        "transformers",
+        "substation",
+        "transmission",
+        "mains",
+        "outlet",
+        "socket"
+      ],
+      "a": "Most of the world's electricity is generated, sent and used as alternating current. Power stations produce three-phase AC, and transformers step it up to hundreds of thousands of volts for long transmission lines, because a higher voltage needs less current and so wastes less energy as heat in the wires. Substations step it down again, and a local transformer brings it to about 120 or 230 volts in homes, at 60 or 50 cycles a second. Polyphase AC, which my namesake helped develop, is still the basis of these grids, although many engineers built them and some long links now use high-voltage direct current.",
+      "source": {
+        "title": "Wikipedia: Electric power transmission",
+        "url": "https://en.wikipedia.org/wiki/Electric_power_transmission"
+      }
+    },
+    {
+      "id": "lightning",
+      "topic": "science",
+      "myth": false,
+      "q": "What is lightning?",
+      "keywords": [
+        "what is lightning",
+        "lightning",
+        "thunder",
+        "thunderstorm",
+        "storm",
+        "static electricity",
+        "static",
+        "shock",
+        "electric shock",
+        "lightning rod",
+        "franklin",
+        "kite"
+      ],
+      "a": "Lightning is a giant electric spark. Inside a storm cloud, colliding ice and water particles separate charge until the voltage between cloud and ground, or between clouds, can reach hundreds of millions of volts and the air breaks down. The channel heats to around 30,000 kelvin, and its sudden expansion makes thunder. Benjamin Franklin's experiments around 1752 helped show that lightning is electrical. High voltage can push a dangerous current through the body, so mains wiring, power lines and Tesla coils are for trained people with proper safety measures, not for home experiments.",
+      "source": {
+        "title": "Wikipedia: Lightning",
+        "url": "https://en.wikipedia.org/wiki/Lightning"
+      }
+    },
+    {
+      "id": "energy_vs_power",
+      "topic": "science",
+      "myth": false,
+      "q": "What is the difference between energy and power?",
+      "keywords": [
+        "energy and power",
+        "power and energy",
+        "energy",
+        "power",
+        "watt",
+        "watts",
+        "kilowatt",
+        "kilowatt hour",
+        "kwh",
+        "joule",
+        "joules"
+      ],
+      "a": "Energy is the capacity to do work, measured in joules or, on an electricity bill, in kilowatt-hours. Power is how fast energy is used or delivered, measured in watts: one watt is one joule per second. A 10-watt LED lamp left on for 100 hours uses one kilowatt-hour. Energy is conserved, so no machine, by Tesla or anyone else, puts out more energy than it takes in.",
+      "source": {
+        "title": "Wikipedia: Power (physics)",
+        "url": "https://en.wikipedia.org/wiki/Power_(physics)"
       }
     }
   ]

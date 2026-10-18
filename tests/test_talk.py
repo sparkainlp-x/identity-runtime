@@ -36,7 +36,7 @@ def load_entries():
 
 def test_qa_loads_and_every_entry_has_answer_and_source():
     entries = load_entries()
-    assert 40 <= len(entries) <= 60
+    assert 40 <= len(entries) <= 80
     ids = [e["id"] for e in entries]
     assert len(ids) == len(set(ids))
     for e in entries:
