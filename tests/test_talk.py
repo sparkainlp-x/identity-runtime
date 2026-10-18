@@ -228,3 +228,30 @@ def test_fallback_timeline_is_ordered_and_covers_the_text():
     assert out["maxlen"] <= 400
     rate = out["chars"] / (out["total"] / 1000)
     assert 8 <= rate <= 25  # characters per second at rate 0.9, in the range of typical browser voices
+
+
+def _luminance(hex_colour):
+    h = hex_colour.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    rgb = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def test_avatar_skin_is_fair_solid_and_not_darkened(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    svg = re.search(r'<svg id="avatar".*?</svg>', page, re.S).group(0)
+    face = re.search(r'<path id="face"[^>]*fill="([^"]+)"', svg).group(1)
+    skins = [face] + re.findall(r'<ellipse class="skin"[^>]*fill="([^"]+)"', svg)
+    skins += re.findall(r'<g id="lid[LR]"><rect[^>]*fill="([^"]+)"', svg)
+    skins += re.findall(r'<g id="neck">(.*?)</g>', svg, re.S)[0] and re.findall(r'fill="(#[0-9a-fA-F]{3,6})"', re.search(r'<g id="neck">(.*?)</g>', svg, re.S).group(1))
+    skins += re.findall(r'<ellipse cx="(?:110|210)" cy="152"[^>]*fill="([^"]+)"', svg)
+    assert len(skins) >= 8
+    for colour in skins:
+        # solid colours only: Chrome's forced dark mode inverts light SVG gradients
+        assert colour.startswith("#"), colour
+        assert _luminance(colour) > 0.45, colour
+    assert _luminance(face) > 0.45 and max(_luminance(c) for c in skins) > 0.75
+    assert "filter=" not in svg and "mix-blend" not in svg and "<image" not in svg
+    assert '<meta name="color-scheme" content="dark light">' in page and "forced-color-adjust:none" in page
