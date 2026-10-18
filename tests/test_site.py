@@ -29,3 +29,4 @@ def test_animation_embeds_recorded_story_and_is_self_contained(tmp_path):
     assert "prefers-reduced-motion" in page and "ArrowRight" in page and 'aria-live="polite"' in page
     assert "not affiliated with or endorsed by Tesla, Inc." in page
     assert 'href="animation.html"' in (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert 'href="talk.html"' in (tmp_path / "index.html").read_text(encoding="utf-8")
