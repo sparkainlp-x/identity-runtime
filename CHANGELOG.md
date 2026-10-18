@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Talk page (`talk.html`): scripted, sourced Q&A with the Tesla-inspired guide, browser speech synthesis and optional speech recognition, public-domain portrait credited in CREDITS.md.
+- Talk page: original illustrated SVG character with viseme lip-sync from speech boundary events (timer fallback), blinking, eye tracking, a thinking state, typed captions and a coil backdrop; deeper default voice with saved settings; static and noscript text fallbacks.
 
 ## 0.1.0 (2026-10-18)
 

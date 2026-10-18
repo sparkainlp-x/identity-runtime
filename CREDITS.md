@@ -13,6 +13,10 @@
 
 The photograph is public domain and is not covered by this repository's AGPL-3.0-only licence. It is not an AI-generated image.
 
+## Illustrated character
+
+The talking figure on `talk.html` is an original SVG cartoon drawn by hand for this project (a stylised 1890s inventor). It is not traced from, generated from or animated from the photograph above, and it is covered by the repository licence.
+
 ## Scripted answers
 
 The answers in `site/tesla_qa.json` were written by hand for this project and are covered by the repository licence. Each answer names the source it was written from, mostly the English Wikipedia articles on Nikola Tesla and related topics, NobelPrize.org and Google Patents. Those sources are linked, not copied.

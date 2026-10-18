@@ -6,7 +6,7 @@ Research prototype from Spark AI NLP (Fredericton, New Brunswick, Canada). Class
 
 - Live demo page: https://sparkainlp-x.github.io/identity-runtime/
 - Animated walkthrough: https://sparkainlp-x.github.io/identity-runtime/animation.html (one recorded run of the Tesla-inspired example, step by step; keyboard controls, captions, respects reduced-motion settings)
-- Talk with the Tesla guide: https://sparkainlp-x.github.io/identity-runtime/talk.html (type or speak a question; scripted, sourced answers read aloud by your browser's synthetic voice, with captions; a fictional educational character, not Tesla himself, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc.; portrait credit in [CREDITS.md](CREDITS.md))
+- Talk with the Tesla guide: https://sparkainlp-x.github.io/identity-runtime/talk.html (type or speak a question; scripted, sourced answers read aloud by your browser's synthetic voice, with typed captions and an original illustrated character whose lips follow the words; a fictional educational character, not Tesla himself, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc.; portrait credit in [CREDITS.md](CREDITS.md))
 - Author: Jean-François Brisson ([ORCID 0009-0000-9778-5374](https://orcid.org/0009-0000-9778-5374)), Spark AI NLP
 - License: AGPL-3.0-only (commercial licensing: [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md))
 - DOI: [10.5281/zenodo.23448946](https://doi.org/10.5281/zenodo.23448946) (concept DOI, all versions); v0.1.0: [10.5281/zenodo.23448947](https://doi.org/10.5281/zenodo.23448947)
@@ -113,7 +113,7 @@ python -m pip install pytest
 python -m pytest -q
 ```
 
-78 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
+83 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static pages (including the animation's embedded data and the talk page's Q&A, sources, myth corrections and self-containment) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
 
 ## Citation
 
