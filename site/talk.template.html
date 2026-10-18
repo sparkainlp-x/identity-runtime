@@ -81,6 +81,16 @@ form input[type=text]{flex:1 1 14rem;min-width:0;background:#081127;color:var(--
 .suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
 .suggest button{font-size:.78rem;padding:.25rem .6rem;border-radius:1rem;color:var(--muted)}
 .suggest button:hover{color:var(--text)}
+.tmap{margin-top:.8rem;border-top:1px solid var(--line);padding-top:.6rem}
+.tmap h3{margin:0 0 .4rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);font-weight:600}
+.tgroups{display:flex;flex-wrap:wrap;gap:.35rem}
+.tgroups button{font-size:.8rem;padding:.3rem .7rem}
+.tgroups button[aria-expanded="true"]{border-color:var(--gold);color:var(--gold);background:#1b2a55}
+.tgroups .n{color:var(--muted);margin-left:.35rem;font-size:.72rem}
+.tpanel{margin-top:.5rem;background:#0c1838;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:.45rem;padding:.5rem .6rem;animation:fade var(--t) ease-out}
+.tpanel ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.3rem}
+.tpanel button{font-size:.78rem;padding:.25rem .6rem;border-radius:1rem}
+.tpanel button.done{color:var(--muted);border-style:dashed}
 .static{margin-top:1rem;font-size:.88rem}
 .static h2{font-size:1rem;color:var(--gold);margin:0 0 .4rem}
 .static dl{margin:0}.static dt{font-weight:600;margin-top:.6rem}.static dd{margin:.15rem 0 0;color:var(--muted)}
@@ -253,6 +263,11 @@ body.still .msg{animation:none}
       </form>
       <p class="hint" id="micHint">Type a question and press Enter.</p>
       <div class="suggest" id="suggest" role="group" aria-label="Suggested questions"></div>
+      <section class="tmap" aria-labelledby="hMap">
+        <h3 id="hMap">Topic map</h3>
+        <div class="tgroups" id="tgroups" role="group" aria-label="Topic groups"></div>
+        <div class="tpanel" id="tpanel" role="region" aria-label="Questions in this topic" hidden></div>
+      </section>
     </section>
   </div>
   <section class="static card" aria-labelledby="hSample">
@@ -433,9 +448,9 @@ function pick(query,asked){
 /* Topic groups for the topic map and for follow-up questions. A note belongs to the group of its topic unless listed in ids. */
 var GROUPS=[
   {id:"life",label:"Life",topics:["life","edison","later","legacy"],ids:[]},
-  {id:"inventions",label:"Inventions",topics:["inventions","ac","westinghouse","radio","safety"],ids:[]},
+  {id:"inventions",label:"Inventions",topics:["inventions","ac","westinghouse","safety"],ids:["turbine"]},
   {id:"basics",label:"Electricity basics",topics:["science"],ids:["ac_vs_dc","power_grid_today","unit","safe_experiment"]},
-  {id:"wireless",label:"Wireless & Wardenclyffe",topics:["wireless"],ids:[]},
+  {id:"wireless",label:"Wireless & Wardenclyffe",topics:["wireless","radio"],ids:["myth_wireless_homes"]},
   {id:"myths",label:"Myths & facts",topics:["myths"],ids:[]},
   {id:"about",label:"About this guide",topics:["about"],ids:[]}
 ];
@@ -783,8 +798,34 @@ function ask(q){
   think(reduce?250:Math.min(1100,450+q.length*8),function(){
     answer(p.entry,p.kind==="offtopic",p.text,p.highlightedText);
     suggest(p.more);
+    markAnswered();
   });
 }
+/* ---- topic map: one group open at a time; its questions are asked verbatim ---- */
+var openGroup=null;
+function markAnswered(){
+  var bs=$("tpanel").querySelectorAll("button[data-id]");
+  for(var i=0;i<bs.length;i++){var done=!!asked[bs[i].dataset.id];bs[i].classList.toggle("done",done);bs[i].setAttribute("aria-label",bs[i].textContent+(done?" (already answered)":""));}
+}
+function showGroup(gid){
+  var panel=$("tpanel"),bs=$("tgroups").querySelectorAll("button");
+  openGroup=openGroup===gid?null:gid;
+  for(var i=0;i<bs.length;i++)bs[i].setAttribute("aria-expanded",String(bs[i].dataset.group===openGroup));
+  panel.textContent="";panel.hidden=!openGroup;if(!openGroup)return;
+  var g=GROUPS.filter(function(x){return x.id===openGroup;})[0],ul=document.createElement("ul");
+  panel.setAttribute("aria-label","Questions about "+g.label);
+  groupEntries(openGroup).forEach(function(e){
+    var li=document.createElement("li"),b=document.createElement("button");b.type="button";b.dataset.id=e.id;b.textContent=e.q;
+    b.addEventListener("click",function(){ask(e.q);});li.appendChild(b);ul.appendChild(li);
+  });
+  panel.appendChild(ul);markAnswered();
+}
+GROUPS.forEach(function(g){
+  var n=groupEntries(g.id).length;if(!n)return;
+  var b=document.createElement("button");b.type="button";b.dataset.group=g.id;b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls","tpanel");
+  b.appendChild(document.createTextNode(g.label));var c=document.createElement("span");c.className="n";c.textContent=String(n);c.setAttribute("aria-label",n+" questions");b.appendChild(c);
+  b.addEventListener("click",function(){showGroup(g.id);});$("tgroups").appendChild(b);
+});
 $("form").addEventListener("submit",function(ev){ev.preventDefault();var i=$("ask");ask(i.value);i.value="";i.focus();});
 $("ask").addEventListener("focus",function(){if(!A.thinking&&!A.pointerAt){var a=el.svg.getBoundingClientRect(),f=this.getBoundingClientRect();A.gazeT={x:f.left>a.right?3:0,y:f.top>a.bottom?2.4:1.6};kick();}});
 

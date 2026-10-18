@@ -598,7 +598,7 @@ def test_follow_up_chips_follow_the_conversation(site):
             # chips are related notes, the same topic or the same group; broad notes only fill in once the group runs out
             assert turn["linked"][0] and turn["linked"] == sorted(turn["linked"], reverse=True), turn
     by_q = {t["q"]: t for t in out["convo"]}
-    assert by_q["death ray"]["id"] == "myth_death_ray" and set(by_q["death ray"]["groups"]) == {"myths"}
+    assert by_q["death ray"]["id"] == "myth_death_ray" and all(by_q["death ray"]["linked"])
     assert by_q["edison"]["id"] == "edison_rivalry" and by_q["edison"]["more"][0] == "war_of_currents"
     assert by_q["what was wardenclyffe"]["more"][0] == "myth_wireless_homes"
     # every note shown in the topic map belongs to exactly one group; the greeting is left out
@@ -619,3 +619,14 @@ def test_related_notes_exist_and_are_not_self():
     for e in with_related:
         assert e["related"] and len(set(e["related"])) == len(e["related"]), e["id"]
         assert all(r in ids and r != e["id"] for r in e["related"]), e["id"]
+
+
+def test_topic_map_markup_and_script(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    assert '<section class="tmap" aria-labelledby="hMap">' in page and 'id="tgroups" role="group"' in page
+    assert 'id="tpanel" role="region"' in page
+    script = page.split("<script>")[1]
+    for needle in ['setAttribute("aria-expanded"', 'setAttribute("aria-controls","tpanel")', "groupEntries(openGroup)", "(already answered)"]:
+        assert needle in script, needle
+    labels = re.findall(r'\{id:"(\w+)",label:"([^"]+)"', script)
+    assert [l for _, l in labels] == ["Life", "Inventions", "Electricity basics", "Wireless & Wardenclyffe", "Myths & facts", "About this guide"]
