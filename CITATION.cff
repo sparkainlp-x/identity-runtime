@@ -3,6 +3,7 @@ message: "If you use this software, please cite it as below. It is a research pr
 type: software
 title: "identity-runtime: governed, reversible avatar personalities with leased capabilities"
 version: 0.1.0
+date-released: "2026-10-18"
 license: AGPL-3.0-only
 repository-code: "https://github.com/sparkainlp-x/identity-runtime"
 url: "https://sparkainlp-x.github.io/identity-runtime/"
