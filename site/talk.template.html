@@ -367,9 +367,10 @@ function score(query){
      that only came from a phrase expansion, so "wardenclyffe" pulls the Wardenclyffe note harder than any note on "laboratory" */
   var rn=norm(query),qt=toks(query),rq=rawToks(query),set={};
   qt.forEach(function(t){set[t]=1.5;});rawToks(expandSynonyms(query,true)).concat(rq).forEach(function(t){if(set[t])set[t]=2;});
-  function fuzzy(t,words,fz){for(var i=0;i<words.length;i++){var w=words[i];if(w.length>=5&&!fz[w]&&lev(w,t)<=(t.length>=8?2:1)){fz[w]=1;return true;}}return false;}
+  /* typo matching: returns the points, 2 for one slip in a long word ("electricty"), 1.5 otherwise, 0 for no match */
+  function fuzzy(t,words,fz){for(var i=0;i<words.length;i++){var w=words[i];if(w.length>=5&&!fz[w]){var d=lev(w,t);if(d<=(t.length>=8?2:1)){fz[w]=1;return d===1&&t.length>=7?2:1.5;}}}return 0;}
   return E.map(function(x){
-    var s=0,hit={},qhit={},fz={};
+    var s=0,hit={},qhit={},fz={},z,loose=[];
     x.kw.forEach(function(k){
       if(k.multi){
         if(nq.indexOf(k.n)>=0){
@@ -377,15 +378,20 @@ function score(query){
           k.forms.forEach(function(g){if(rn.indexOf(g.raw)>=0&&(!f||g.w>f.w))f=g;});
           if(!f)f=k.forms[0];
           if(!hit[f.raw]){s+=f.w;hit[f.raw]=1;f.rt.forEach(function(t){hit[t]=1;});}
+          hit["t:"+k.t.join(" ")]=1;
           k.t.forEach(function(t){qhit[t]=1;});
         }
-        else if(k.orig&&k.orig.length>=5&&!hit[k.orig]&&fuzzy(k.orig,rq,fz)){s+=1.5;hit[k.orig]=1;}
+        else if(k.t.length>=2&&k.t.every(function(t){return set[t]===2;}))loose.push(k);
+        else if(k.orig&&k.orig.length>=5&&!hit[k.orig]&&(z=fuzzy(k.orig,rq,fz))){s+=z;hit[k.orig]=1;}
       }
       else if(k.t.length){var t=k.t[0];
         if(set[t]){if(!hit[t]){s+=set[t];hit[t]=1;qhit[t]=1;}}
-        else if(t.length>=5&&!hit[t]&&fuzzy(t,qt,fz)){s+=1.5;hit[t]=1;qhit[t]=1;}
+        else if(t.length>=5&&!hit[t]&&(z=fuzzy(t,qt,fz))){s+=z;hit[t]=1;qhit[t]=1;}
       }
     });
+    /* then phrases whose words are all in the question, in any order or with words between ("before coming to america",
+       "3, 6 and 9"); skipped when a phrase with the same words already matched exactly */
+    loose.forEach(function(k){var key="t:"+k.t.join(" ");if(!hit[key]){s+=1+k.t.length;hit[key]=1;k.t.forEach(function(t){hit[t]=1;qhit[t]=1;});}});
     var k=s;
     x.qt.forEach(function(t){if(set[t]===2&&!hit[t]&&!qhit[t]){s+=0.6;hit[t]=1;}});
     return {x:x,s:s,k:k};

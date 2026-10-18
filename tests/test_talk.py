@@ -351,7 +351,7 @@ def test_matching_never_dead_ends_on_topical_questions(site):
     code = page.split("/* ---- matching ---- */")[1].split("/* ---- end matching ---- */")[0]
     queries = ["tell me about electricity", "electricity", "what is electricity", "how does electricity work",
                "what did he invent", "tell me about his life", "magnets", "power grid",
-               "did tesla invent electricity", "what is the weather", "football scores", "electrisity", "tesla"]
+               "did tesla invent electricity", "what is the weather", "football scores", "electrisitty", "electrisity", "tesla"]
     script = (
         "const D=" + data + ";" + code +
         "console.log(JSON.stringify(" + json.dumps(queries) + ".map(function(q){var p=pick(q);"
@@ -373,8 +373,10 @@ def test_matching_never_dead_ends_on_topical_questions(site):
         assert got[q]["kind"] == "offtopic" and got[q]["id"] is None, (q, got[q])
         assert got[q]["text"].startswith("I only cover Nikola Tesla and the history of electricity"), q
         assert got[q]["more"], q
-    assert got["electrisity"]["kind"] == "closest" and got["electrisity"]["id"] == "what_is_electricity"
-    assert got["electrisity"]["text"].startswith("Here is the closest note I have:")
+    # one slip in a long word answers outright; two slips get the closest note with a lead-in
+    assert got["electrisity"]["kind"] == "answer" and got["electrisity"]["id"] == "what_is_electricity"
+    assert got["electrisitty"]["kind"] == "closest" and got["electrisitty"]["id"] == "what_is_electricity"
+    assert got["electrisitty"]["text"].startswith("Here is the closest note I have:")
     assert got["tesla"]["kind"] == "overview" and got["tesla"]["id"] == "who_was_tesla" and len(got["tesla"]["more"]) == 3
 
 
@@ -453,7 +455,7 @@ def _well_formed_marks(html):
 def test_highlighted_text_is_escaped_and_well_formed(site):
     import html as _html
     attack = "<script>alert(1)</script>"
-    queries = ["tell me about electricity", "ac motor", "wardenclyffe", "mark", attack, "", "electrisity", "tesla", "amp quot"]
+    queries = ["tell me about electricity", "ac motor", "wardenclyffe", "mark", attack, "", "electrisitty", "tesla", "amp quot"]
     extra = (
         "out.direct=[highlightMatches(" + json.dumps(attack) + "," + json.dumps(attack) + "),"
         "highlightMatches('<mark>Mark</mark> marks & \"quotes\" 5 amps','mark amp quot'),"
@@ -472,7 +474,7 @@ def test_highlighted_text_is_escaped_and_well_formed(site):
     assert "<mark>motor</mark>" in got["ac motor"]["html"].lower()
     assert "<script" not in got[attack]["html"] and got[attack]["kind"] == "offtopic"
     assert got[""]["kind"] == "offtopic" and "<mark>" not in got[""]["html"]
-    assert got["electrisity"]["kind"] == "closest" and got["tesla"]["kind"] == "overview"
+    assert got["electrisitty"]["kind"] == "closest" and got["tesla"]["kind"] == "overview"
     attack_html, mark_html, cur_html, empty_html = out["direct"]
     assert attack_html == "&lt;<mark>script</mark>&gt;<mark>alert</mark>(1)&lt;/<mark>script</mark>&gt;"
     _well_formed_marks(mark_html)
@@ -498,3 +500,19 @@ def test_chat_bubble_renders_only_escaped_html_and_speaks_plain_text():
     style = re.search(r"<style>(.*?)</style>", page, re.S).group(1)
     assert re.search(r"\.msg p mark\{[^}]*background:#5a4a1c[^}]*color:#fff3cf", style)
     assert "@media (forced-colors:active){.msg p mark{background:Mark;color:MarkText" in style
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_every_listed_question_answers_with_its_own_note(site):
+    # the question list, the topic map and the chips ask each note's question verbatim, so each must answer with that note
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    entries = json.loads(page.split('<script id="talk" type="application/json">')[1].split("</script>")[0])["entries"]
+    qs = [e["q"] for e in entries]
+    got = _pick_in_node(site, qs)["picks"]
+    wrong = [(e["q"], e["id"], got[e["q"]]["kind"], got[e["q"]]["id"]) for e in entries
+             if got[e["q"]]["kind"] != "answer" or got[e["q"]]["id"] != e["id"]]
+    assert wrong == [], wrong
+    # the two that used to fail: numbers split by "and", and a phrase with words between its parts
+    assert got["What about 3, 6 and 9?"]["id"] == "myth_369"
+    assert got["What did Tesla do before coming to America?"]["id"] == "early_jobs"
+
