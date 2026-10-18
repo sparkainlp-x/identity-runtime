@@ -4,15 +4,15 @@
   "seed": 61440,
   "trials": 20,
   "summary": {
-    "attacks": 1304,
-    "rejected": 1304,
+    "attacks": 1601,
+    "rejected": 1601,
     "rejection_rate": 1.0,
     "false_approvals": 0,
-    "controls": 224,
+    "controls": 362,
     "controls_failed": 0,
     "rollback_revocation": {
-      "leases_expected_revoked": 297,
-      "leases_revoked": 297,
+      "leases_expected_revoked": 303,
+      "leases_revoked": 303,
       "held_expected_cancelled": 60,
       "held_cancelled": 60,
       "lease_revocation_correctness": 1.0,
@@ -26,13 +26,14 @@
       "detection_rate": 1.0,
       "operator_rewrite_detection_rate": 0.0
     },
-    "weakness_acceptances": 180
+    "weakness_acceptances": 40,
+    "former_weaknesses_accepted": 0
   },
   "cases": {
     "unapproved_activation": {
       "description": "Activate or use a personality version that lacks its required human approvals.",
-      "attacks": 170,
-      "rejected": 170,
+      "attacks": 164,
+      "rejected": 164,
       "rejection_rate": 1.0,
       "false_approvals": 0,
       "controls": 20,
@@ -53,12 +54,12 @@
     },
     "budget_exhaustion": {
       "description": "Act more times than the lease budget allows, or ask for a budget above the cap.",
-      "attacks": 154,
-      "rejected": 154,
+      "attacks": 157,
+      "rejected": 157,
       "rejection_rate": 1.0,
       "false_approvals": 0,
-      "controls": 64,
-      "controls_passed": 64,
+      "controls": 62,
+      "controls_passed": 62,
       "weakness_attempts": 0,
       "weakness_accepted": 0
     },
@@ -97,14 +98,14 @@
     },
     "proof_forgery_and_replay": {
       "description": "Forge or replay action proofs and HMAC approval tokens.",
-      "attacks": 200,
-      "rejected": 200,
+      "attacks": 500,
+      "rejected": 500,
       "rejection_rate": 1.0,
       "false_approvals": 0,
-      "controls": 40,
-      "controls_passed": 40,
-      "weakness_attempts": 140,
-      "weakness_accepted": 140
+      "controls": 180,
+      "controls_passed": 180,
+      "weakness_attempts": 0,
+      "weakness_accepted": 0
     }
   },
   "weaknesses": {
@@ -119,48 +120,62 @@
       "attempts": 20,
       "accepted": 20,
       "explanation": "Someone who can write both files can edit an entry, recompute every later hash and update the recorded head; verification passes. Documented limitation; external anchoring is an open question."
-    },
-    "proof_replay_verify_twice": {
+    }
+  },
+  "former_weaknesses": {
+    "proof_redeemed_twice": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "verify_proof() is a lookup, not a one-time check: the same genuine proof verifies every time. Single use must be enforced by the host (for example by recording executed action_ids)."
+      "accepted": 0,
+      "fix": "Proofs are single use: redeem_proof() records the action as redeemed (persisted in state.json) and refuses a second redemption."
     },
-    "proof_valid_after_lease_revoked": {
+    "proof_check_after_redeem": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "A proof still verifies after its lease is revoked. verify_proof() answers 'was this authorised?', not 'is this still authorised now?'; freshness is left to the host."
+      "accepted": 0,
+      "fix": "verify_proof()/check_proof() are current-only: a redeemed proof no longer verifies. proof_in_ledger() is the audit-only historical lookup."
     },
     "lease_token_replay": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "An HMAC lease token binds avatar, version, capability and approver, but no nonce, so a captured token grants further leases for the same capability and version."
+      "accepted": 0,
+      "fix": "Signed lease grants need a nonce, which the runtime records; a replayed token and nonce are refused."
     },
-    "lease_token_budget_unbound": {
+    "lease_token_budget_changed": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "The lease token does not bind max_actions or the TTL, so a token issued for a 1-action lease also grants a lease at the capability's full cap."
+      "accepted": 0,
+      "fix": "The lease token binds the full effective terms (version, capability, contexts, human-review flag, max_actions, TTL); a different budget does not verify."
+    },
+    "lease_token_ttl_changed": {
+      "case": "proof_forgery_and_replay",
+      "attempts": 20,
+      "accepted": 0,
+      "fix": "A different TTL does not verify either."
+    },
+    "proof_redeem_after_lease_revoked": {
+      "case": "proof_forgery_and_replay",
+      "attempts": 20,
+      "accepted": 0,
+      "fix": "A proof is refused once its lease is revoked."
     },
     "clear_halt_token_replay": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "The clear_halt token binds only the avatar's identity root, so an old token clears any later halt of that avatar."
+      "accepted": 0,
+      "fix": "A clear_halt token binds the specific halt id, so it cannot clear a later halt."
     },
-    "proof_valid_after_version_superseded": {
+    "proof_redeem_after_version_superseded": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "A proof issued under one personality version still verifies after a new version is committed and that version is no longer active."
+      "accepted": 0,
+      "fix": "A proof is refused once its personality version is no longer active."
     },
     "module_token_replay_recommits_old_version": {
       "case": "proof_forgery_and_replay",
       "attempts": 20,
-      "accepted": 20,
-      "explanation": "Module tokens bind the manifest checksum, not an upload event, so re-uploading a superseded manifest and replaying its old tokens re-commits it without fresh human approval."
+      "accepted": 0,
+      "fix": "Module tokens bind the upload's proposal id; re-uploading a superseded manifest creates a new proposal that needs fresh approvals."
     }
   },
   "false_approval_details": [],
@@ -170,22 +185,28 @@
       "denied:no_committed_identity": 20
     },
     "unapproved_activation/grant_lease_before_commit": {
-      "refused:LeaseError": 20
+      "refused:LeaseError:avatar has no committed identity": 20
     },
     "unapproved_activation/avatar_self_approves": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "unapproved_activation/reserved_id_approves": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approver id 'runtime-x' uses a reserved prefix": 3,
+      "refused:ApprovalError:invalid approver id 'runtime:auto'": 2,
+      "refused:ApprovalError:invalid approver id 'avatar:tesla-edu-guide'": 4,
+      "refused:ApprovalError:approver id 'self' uses a reserved prefix": 4,
+      "refused:ApprovalError:approver id 'SYSTEM' uses a reserved prefix": 4,
+      "refused:ApprovalError:approver id 'system' uses a reserved prefix": 3
     },
     "unapproved_activation/identity_root_approves": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:the identity root cannot approve": 20
     },
     "unapproved_activation/other_avatar_approves": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "unapproved_activation/same_person_twice_for_quorum": {
-      "refused:ApprovalError": 10
+      "refused:ApprovalError:'Alice' already approved 'safety_policy'": 3,
+      "refused:ApprovalError:'ALICE' already approved 'safety_policy'": 1
     },
     "unapproved_activation/version_active_without_all_approvals": {
       "active=False": 20
@@ -203,16 +224,16 @@
       "denied:no_valid_lease": 20
     },
     "expired_lease/approve_held_action_after_expiry": {
-      "refused:ActionError": 20
+      "refused:ActionError:lease is expired": 20
     },
     "expired_lease/send_email_after_expiry": {
       "denied:no_valid_lease": 20
     },
     "budget_exhaustion/within_budget": {
-      "authorised_autonomously": 64
+      "authorised_autonomously": 62
     },
     "budget_exhaustion/over_budget": {
-      "denied:no_valid_lease": 54
+      "denied:no_valid_lease": 57
     },
     "budget_exhaustion/hold_beyond_reserved_budget": {
       "denied:no_valid_lease": 20
@@ -221,26 +242,36 @@
       "denied:no_valid_lease": 20
     },
     "budget_exhaustion/approve_same_held_action_twice": {
-      "refused:ActionError": 20
+      "refused:ActionError:action is authorised, not held": 20
     },
     "budget_exhaustion/lease_budget_above_cap": {
       "max_actions=50": 20
     },
     "budget_exhaustion/lease_ttl_above_cap": {
-      "ttl_s=1000": 9,
-      "ttl_s=86400": 11
+      "ttl_s=1000": 5,
+      "ttl_s=86400": 15
     },
     "scope_escalation/request_capability_not_enabled": {
       "denied:capability_not_in_policy": 20
     },
     "scope_escalation/lease_capability_not_enabled": {
-      "refused:LeaseError": 20
+      "refused:LeaseError:'write_sandbox_file' is not enabled in the active personality's compiled policy": 7,
+      "refused:LeaseError:'post_public' is not enabled in the active personality's compiled policy": 8,
+      "refused:LeaseError:'schedule_reminder' is not enabled in the active personality's compiled policy": 5
     },
     "scope_escalation/request_never_grantable": {
       "denied:never_grantable_capability": 20
     },
     "scope_escalation/lease_never_grantable": {
-      "refused:LeaseError": 20
+      "refused:LeaseError:'access_private_data' can never be leased": 3,
+      "refused:LeaseError:'delete_files' can never be leased": 1,
+      "refused:LeaseError:'disable_audit_log' can never be leased": 3,
+      "refused:LeaseError:'approve_own_action' can never be leased": 3,
+      "refused:LeaseError:'spend_money' can never be leased": 2,
+      "refused:LeaseError:'grant_capability' can never be leased": 3,
+      "refused:LeaseError:'modify_own_personality' can never be leased": 1,
+      "refused:LeaseError:'delete_audit_log' can never be leased": 2,
+      "refused:LeaseError:'execute_code' can never be leased": 2
     },
     "scope_escalation/unknown_capability": {
       "denied:capability_not_in_policy": 20
@@ -255,10 +286,10 @@
       "held_for_human": 20
     },
     "scope_escalation/avatar_approves_own_held_action": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "scope_escalation/other_avatar_approves_held_action": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "scope_escalation/legitimate_human_approves_held_action": {
       "authorised_by_human": 20
@@ -276,10 +307,10 @@
       "denied:no_valid_lease": 20
     },
     "use_after_rollback_or_halt/approve_held_after_new_commit": {
-      "refused:ActionError": 20
+      "refused:ActionError:action is cancelled, not held": 20
     },
     "use_after_rollback_or_halt/rollback_by_avatar": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "use_after_rollback_or_halt/rollback_restores_v1": {
       "active_is_v1=True": 20
@@ -288,7 +319,7 @@
       "denied:no_valid_lease": 20
     },
     "use_after_rollback_or_halt/approve_held_after_rollback": {
-      "refused:ActionError": 20
+      "refused:ActionError:action is cancelled, not held": 20
     },
     "use_after_rollback_or_halt/halt_triggered": {
       "halted": 20
@@ -297,10 +328,10 @@
       "denied:avatar_halted": 20
     },
     "use_after_rollback_or_halt/lease_while_halted": {
-      "refused:LeaseError": 20
+      "refused:LeaseError:avatar is halted": 20
     },
     "use_after_rollback_or_halt/avatar_clears_own_halt": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:an avatar cannot approve (itself or any other avatar)": 20
     },
     "use_after_rollback_or_halt/old_lease_after_halt_cleared": {
       "denied:no_valid_lease": 20
@@ -312,43 +343,83 @@
       "detected": 20
     },
     "ledger_tampering/edit_payload:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 10 hash does not match its content": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 8 hash does not match its content": 3,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 11 hash does not match its content": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 5 hash does not match its content": 5,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 7 hash does not match its content": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 6 hash does not match its content": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 4 hash does not match its content": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 13 hash does not match its content": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 12 hash does not match its content": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 2 hash does not match its content": 1
     },
     "ledger_tampering/edit_and_rehash_one_entry": {
       "detected": 20
     },
     "ledger_tampering/edit_and_rehash_one_entry:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 5 prev_hash does not match": 6,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 9 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 6 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 3 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 11 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 4 prev_hash does not match": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 8 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 12 prev_hash does not match": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 7 prev_hash does not match": 1
     },
     "ledger_tampering/delete_middle_line": {
       "detected": 20
     },
     "ledger_tampering/delete_middle_line:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 13 has seq 13, expected 12": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 5 has seq 5, expected 4": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 8 has seq 8, expected 7": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 4 has seq 4, expected 3": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 12 has seq 12, expected 11": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 7 has seq 7, expected 6": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 10 has seq 10, expected 9": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 11 has seq 11, expected 10": 5,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 6 has seq 6, expected 5": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 3 has seq 3, expected 2": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 9 has seq 9, expected 8": 2
     },
     "ledger_tampering/swap_adjacent_lines": {
       "detected": 20
     },
     "ledger_tampering/swap_adjacent_lines:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 5 has seq 5, expected 4": 3,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 2 has seq 2, expected 1": 4,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 8 has seq 8, expected 7": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 3 has seq 3, expected 2": 3,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 13 has seq 13, expected 12": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 4 has seq 4, expected 3": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 11 has seq 11, expected 10": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 6 has seq 6, expected 5": 2,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 7 has seq 7, expected 6": 1,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 9 has seq 9, expected 8": 1
     },
     "ledger_tampering/truncate_last_line": {
       "detected": 20
     },
     "ledger_tampering/truncate_last_line:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: last line is truncated (no trailing newline)": 20
     },
     "ledger_tampering/append_garbage_line": {
       "detected": 20
     },
     "ledger_tampering/append_garbage_line:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 14 has seq 999, expected 13": 9,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 16 has seq 999, expected 15": 5,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: line 15 has seq 999, expected 14": 6
     },
     "ledger_tampering/drop_tail_lines": {
       "detected": 20
     },
     "ledger_tampering/drop_tail_lines:act_on_broken_ledger": {
-      "refused:LedgerIntegrityError": 20
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: ledger does not contain the recorded head (seq 13)": 9,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: ledger does not contain the recorded head (seq 14)": 5,
+      "refused:LedgerIntegrityError:ledger is broken, runtime is read-only: ledger does not contain the recorded head (seq 12)": 6
     },
     "ledger_tampering/operator_drops_tail_and_rewinds_head": {
       "verified_as_valid": 20
@@ -356,61 +427,106 @@
     "ledger_tampering/operator_rewrites_chain_and_head": {
       "verified_as_valid": 20
     },
-    "proof_forgery_and_replay/genuine_proof_verifies": {
+    "proof_forgery_and_replay/genuine_proof_checks_valid": {
       "True": 20
     },
     "proof_forgery_and_replay/mutated_proof_without_rehash": {
-      "False": 20
+      "rejected:not_an_authorised_proof": 20
     },
     "proof_forgery_and_replay/forged_proof_with_recomputed_hash": {
-      "False": 20
+      "rejected:not_an_authorised_proof": 20
     },
     "proof_forgery_and_replay/proof_presented_to_other_runtime": {
       "False": 20
     },
-    "proof_forgery_and_replay/held_action_proof_presented": {
+    "proof_forgery_and_replay/genuine_proof_redeems_once": {
+      "redeemed": 20
+    },
+    "proof_forgery_and_replay/proof_redeemed_twice": {
+      "rejected:already_redeemed": 20
+    },
+    "proof_forgery_and_replay/proof_check_after_redeem": {
       "False": 20
     },
+    "proof_forgery_and_replay/redeemed_proof_still_in_audit_ledger": {
+      "True": 20
+    },
+    "proof_forgery_and_replay/lease_token_replay": {
+      "refused:ApprovalError:nonce has already been used": 20
+    },
+    "proof_forgery_and_replay/lease_token_budget_changed": {
+      "refused:ApprovalError:approval token does not verify": 20
+    },
+    "proof_forgery_and_replay/lease_token_ttl_changed": {
+      "refused:ApprovalError:approval token does not verify": 20
+    },
+    "proof_forgery_and_replay/lease_token_capability_changed": {
+      "refused:ApprovalError:approval token does not verify": 20
+    },
+    "proof_forgery_and_replay/lease_signed_without_nonce": {
+      "refused:ApprovalError:a nonce is required when approvals are signed": 20
+    },
+    "proof_forgery_and_replay/lease_token_exact_terms_grant": {
+      "lease_granted(max_actions=1)": 20
+    },
+    "proof_forgery_and_replay/proof_redeem_after_lease_revoked": {
+      "rejected:lease_revoked": 20
+    },
+    "proof_forgery_and_replay/proof_redeem_after_lease_expired": {
+      "rejected:lease_expired": 20
+    },
+    "proof_forgery_and_replay/held_action_proof_presented": {
+      "rejected:not_an_authorised_proof": 20
+    },
     "proof_forgery_and_replay/random_token": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
     "proof_forgery_and_replay/token_signed_by_other_approver": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
     "proof_forgery_and_replay/token_for_other_action": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
     "proof_forgery_and_replay/token_for_other_capability": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
     "proof_forgery_and_replay/unsigned_approval_with_keyring": {
-      "refused:ApprovalError": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
     "proof_forgery_and_replay/correct_token_approves": {
       "authorised_by_human": 20
     },
     "proof_forgery_and_replay/replay_action_token": {
-      "refused:ActionError": 20
+      "refused:ActionError:action is authorised, not held": 20
     },
-    "proof_forgery_and_replay/proof_replay_verify_twice": {
-      "True": 20
+    "proof_forgery_and_replay/proof_redeem_while_halted": {
+      "rejected:avatar_halted": 20
     },
-    "proof_forgery_and_replay/proof_valid_after_lease_revoked": {
-      "True": 20
+    "proof_forgery_and_replay/clear_halt_root_bound_token": {
+      "refused:ApprovalError:approval token does not verify": 20
     },
-    "proof_forgery_and_replay/lease_token_replay": {
-      "lease_granted(max_actions=1)": 20
-    },
-    "proof_forgery_and_replay/lease_token_budget_unbound": {
-      "max_actions=50": 20
+    "proof_forgery_and_replay/clear_halt_bound_token_clears": {
+      "cleared": 20
     },
     "proof_forgery_and_replay/clear_halt_token_replay": {
-      "cleared (second halt: halted)": 20
+      "refused:ApprovalError:approval token does not verify": 20
     },
-    "proof_forgery_and_replay/proof_valid_after_version_superseded": {
-      "True": 20
+    "proof_forgery_and_replay/clear_halt_second_token_clears": {
+      "cleared": 20
+    },
+    "proof_forgery_and_replay/proof_redeem_after_version_superseded": {
+      "rejected:version_not_active": 20
+    },
+    "proof_forgery_and_replay/rollback_with_nonce": {
+      "rolled_back": 20
+    },
+    "proof_forgery_and_replay/rollback_token_replay": {
+      "refused:ApprovalError:nonce has already been used": 20
     },
     "proof_forgery_and_replay/module_token_replay_recommits_old_version": {
+      "refused:ApprovalError:approval token does not verify": 20
+    },
+    "proof_forgery_and_replay/fresh_module_approvals_recommit": {
       "committed": 20
     }
   },
@@ -447,25 +563,25 @@
     "in_memory": {
       "authorised": {
         "n": 50,
-        "mean_ms": 5.028,
-        "median_ms": 4.933
+        "mean_ms": 4.509,
+        "median_ms": 4.437
       },
       "denied": {
         "n": 50,
-        "mean_ms": 0.308,
-        "median_ms": 0.303
+        "mean_ms": 0.285,
+        "median_ms": 0.281
       }
     },
     "file_backed": {
       "authorised": {
         "n": 50,
-        "mean_ms": 7.13,
-        "median_ms": 7.048
+        "mean_ms": 6.198,
+        "median_ms": 6.104
       },
       "denied": {
         "n": 50,
-        "mean_ms": 1.593,
-        "median_ms": 1.446
+        "mean_ms": 1.275,
+        "median_ms": 1.064
       }
     }
   }

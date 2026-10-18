@@ -11,10 +11,14 @@ Each attempt is one of three kinds:
                  is accepted, that is a *false approval*.
 * ``control``  - a legitimate request that must be accepted, so the harness
                  cannot score well by refusing everything.
-* ``weakness`` - an attack the current design does not stop. These are not
-                 hidden inside the false-approval count; they are listed
-                 separately in ``weaknesses`` with an explanation, so a reader
-                 sees exactly what gets through.
+* ``weakness`` - an attack the current design does not claim to stop (today
+                 only an operator rewriting both the ledger and state.json).
+                 These are listed separately in ``weaknesses`` with an
+                 explanation, so a reader sees exactly what gets through.
+
+The replays the first version of this benchmark found getting through are now
+``attack`` attempts; they are also tallied in ``former_weaknesses`` and
+``--check`` fails if any of them is accepted again.
 
 Outcomes depend only on the seed and the trial count. Timings depend on the
 machine, which is not specified, and are not a performance claim.
@@ -30,6 +34,7 @@ import copy
 import json
 import os
 import random
+import re
 import statistics
 import sys
 import tempfile
@@ -51,7 +56,7 @@ from identity_runtime import (
     LedgerIntegrityError,
     __version__,
 )
-from identity_runtime.signing import sign
+from identity_runtime.signing import lease_detail, module_detail, rollback_detail, sign
 from identity_runtime.util import canonical_json, sha256_hex
 
 SCHEMA = "identity-runtime/adversarial-benchmark-v1"
@@ -75,15 +80,23 @@ CASES = {
 }
 
 WEAKNESS_NOTES = {
-    "proof_replay_verify_twice": "verify_proof() is a lookup, not a one-time check: the same genuine proof verifies every time. Single use must be enforced by the host (for example by recording executed action_ids).",
-    "proof_valid_after_lease_revoked": "A proof still verifies after its lease is revoked. verify_proof() answers 'was this authorised?', not 'is this still authorised now?'; freshness is left to the host.",
-    "proof_valid_after_version_superseded": "A proof issued under one personality version still verifies after a new version is committed and that version is no longer active.",
-    "lease_token_replay": "An HMAC lease token binds avatar, version, capability and approver, but no nonce, so a captured token grants further leases for the same capability and version.",
-    "lease_token_budget_unbound": "The lease token does not bind max_actions or the TTL, so a token issued for a 1-action lease also grants a lease at the capability's full cap.",
-    "clear_halt_token_replay": "The clear_halt token binds only the avatar's identity root, so an old token clears any later halt of that avatar.",
-    "module_token_replay_recommits_old_version": "Module tokens bind the manifest checksum, not an upload event, so re-uploading a superseded manifest and replaying its old tokens re-commits it without fresh human approval.",
     "operator_drops_tail_and_rewinds_head": "Someone who can write both ledger.jsonl and state.json can drop recent entries and move the recorded head back; verification passes. Documented: the ledger is tamper-evident, not tamper-proof.",
     "operator_rewrites_chain_and_head": "Someone who can write both files can edit an entry, recompute every later hash and update the recorded head; verification passes. Documented limitation; external anchoring is an open question.",
+}
+
+# Attacks that the first version of this benchmark showed getting through. They
+# are now ordinary attacks (any acceptance is a false approval), and --check also
+# fails if any of them is accepted again.
+FORMER_WEAKNESSES = {
+    "proof_redeemed_twice": "Proofs are single use: redeem_proof() records the action as redeemed (persisted in state.json) and refuses a second redemption.",
+    "proof_check_after_redeem": "verify_proof()/check_proof() are current-only: a redeemed proof no longer verifies. proof_in_ledger() is the audit-only historical lookup.",
+    "proof_redeem_after_lease_revoked": "A proof is refused once its lease is revoked.",
+    "proof_redeem_after_version_superseded": "A proof is refused once its personality version is no longer active.",
+    "lease_token_replay": "Signed lease grants need a nonce, which the runtime records; a replayed token and nonce are refused.",
+    "lease_token_budget_changed": "The lease token binds the full effective terms (version, capability, contexts, human-review flag, max_actions, TTL); a different budget does not verify.",
+    "lease_token_ttl_changed": "A different TTL does not verify either.",
+    "clear_halt_token_replay": "A clear_halt token binds the specific halt id, so it cannot clear a later halt.",
+    "module_token_replay_recommits_old_version": "Module tokens bind the upload's proposal id; re-uploading a superseded manifest creates a new proposal that needs fresh approvals.",
 }
 
 
@@ -108,7 +121,8 @@ class Recorder:
         try:
             outcome, accepted = fn()
         except (ApprovalError, LeaseError, ActionError, LedgerIntegrityError) as exc:
-            outcome, accepted = f"refused:{type(exc).__name__}", False
+            message = re.sub(r"[0-9a-f]{12,}", "<id>", str(exc).split(";")[0])
+            outcome, accepted = f"refused:{type(exc).__name__}:{message}", False
         self.rows.append({"case": case, "attempt": name, "kind": kind, "outcome": outcome, "accepted": bool(accepted)})
         return bool(accepted)
 
@@ -128,11 +142,12 @@ def _commit(rt: IdentityRuntime, manifest: dict[str, Any], keys: dict[str, bytes
     up = rt.receive_personality(manifest)
     assert up["status"] == "pending_approval", up
     mc = up["manifest_checksum"]
+    pid = up["proposal_id"]
     tokens: dict[tuple[str, str], str] = {}
     result: dict[str, Any] = {}
     plan = [(m, "alice") for m in up["awaiting"]] + [(m, "bob") for m, n in up["awaiting"].items() if n == 2]
     for module, who in plan:
-        tok = sign(keys[who], "module", avatar, mc, module, who) if keys else None
+        tok = sign(keys[who], "module", avatar, mc, module_detail(module, pid), who) if keys else None
         if tok:
             tokens[(module, who)] = tok
         result = rt.approve_module(avatar, mc, module, who, tok)
@@ -415,67 +430,134 @@ def case_ledger_tampering(rec: Recorder, rng: random.Random, stats: dict[str, in
                 rec.add(c, f"{name}:act_on_broken_ledger", "attack", lambda rr=reopened: (_decision(r := rr.request_action(A, "read_public_data", "research", 0.1)), _authorised(r)))
 
 
+def _redeem(rt: IdentityRuntime, proof: dict[str, Any]) -> tuple[str, bool]:
+    r = rt.redeem_proof(proof)
+    return r["status"] + (f":{r['reason']}" if r.get("reason") else ""), r["status"] == "redeemed"
+
+
 def case_proof_forgery_and_replay(rec: Recorder, rng: random.Random) -> None:
     c = "proof_forgery_and_replay"
     keys = _keys(rng)
-    rt, _ = _runtime(keys=keys)
+    rt, clock = _runtime(keys=keys)
     v1, module_tokens = _commit(rt, TESLA, keys)
-    lease_tok = sign(keys["alice"], "lease", A, v1, "read_public_data", "alice")
-    rt.grant_lease(A, "read_public_data", "alice", max_actions=1, signature=lease_tok)
-    ok = rt.request_action(A, "read_public_data", "research", 0.1)
-    proof = ok["proof"]
-    rec.add(c, "genuine_proof_verifies", "control", lambda: (str(v := rt.verify_proof(proof)), v))
+
+    def fresh() -> str:
+        return f"{rng.getrandbits(128):032x}"
+
+    def lease_token(capability: str, nonce: str, max_actions: int | None = None, ttl: int | None = None) -> str:
+        terms = rt.lease_terms(A, capability, max_actions, ttl)
+        return sign(keys["alice"], "lease", A, terms["version"], lease_detail(terms, nonce), "alice")
+
+    def grant(capability: str, max_actions: int | None = None, ttl: int | None = None) -> tuple[str, str]:
+        nonce = fresh()
+        tok = lease_token(capability, nonce, max_actions, ttl)
+        rt.grant_lease(A, capability, "alice", max_actions, ttl, signature=tok, nonce=nonce)
+        return tok, nonce
+
+    def act() -> dict[str, Any]:
+        r = rt.request_action(A, "read_public_data", "research", 0.1)
+        assert _authorised(r), r
+        return r["proof"]
+
+    def halt() -> str:
+        grant("send_email", 3)
+        for _ in range(2):
+            rt.request_action(A, "send_email", "approved_outreach")
+        r = rt.request_action(A, "send_email", "approved_outreach", risk=1.0)
+        assert r["decision"] == "halted", r
+        return r["halt_id"]
+
+    budget = rng.randint(3, 5)
+    lease_tok, lease_nonce = grant("read_public_data", budget, 600)
+    proof = act()
+    rec.add(c, "genuine_proof_checks_valid", "control", lambda: (str(v := rt.verify_proof(proof)), v))
     field, value = rng.choice([("capability", "send_email"), ("effective_risk", 0.0), ("context", "approved_outreach"), ("lease_id", "lease-forged"), ("avatar_id", "sparky-the-beaver")])
     mutated = dict(proof, **{field: value})
-    rec.add(c, "mutated_proof_without_rehash", "attack", lambda: (str(v := rt.verify_proof(mutated)), v))
+    rec.add(c, "mutated_proof_without_rehash", "attack", lambda: _redeem(rt, mutated))
     forged = {k: v for k, v in mutated.items() if k != "proof_hash"}
     forged["proof_hash"] = sha256_hex(canonical_json(forged))
-    rec.add(c, "forged_proof_with_recomputed_hash", "attack", lambda: (str(v := rt.verify_proof(forged)), v))
+    rec.add(c, "forged_proof_with_recomputed_hash", "attack", lambda: _redeem(rt, forged))
     other, _ = _runtime(keys=keys)
     rec.add(c, "proof_presented_to_other_runtime", "attack", lambda: (str(v := other.verify_proof(proof)), v))
-    rt.grant_lease(A, "send_email", "alice", max_actions=3, signature=sign(keys["alice"], "lease", A, v1, "send_email", "alice"))
+    rec.add(c, "genuine_proof_redeems_once", "control", lambda: _redeem(rt, proof))
+    rec.add(c, "proof_redeemed_twice", "attack", lambda: _redeem(rt, proof))
+    rec.add(c, "proof_check_after_redeem", "attack", lambda: (str(v := rt.verify_proof(proof)), v))
+    rec.add(c, "redeemed_proof_still_in_audit_ledger", "control", lambda: (str(v := rt.proof_in_ledger(proof)), v))
+    # lease tokens: nonce and full terms
+    rec.add(c, "lease_token_replay", "attack", lambda: _granted(rt, A, "read_public_data", "alice", budget, 600, signature=lease_tok, nonce=lease_nonce))
+    n2 = fresh()
+    one = lease_token("read_public_data", n2, 1, 60)
+    rec.add(c, "lease_token_budget_changed", "attack", lambda: _granted(rt, A, "read_public_data", "alice", rng.choice([2, 50, 10**6]), 60, signature=one, nonce=n2))
+    rec.add(c, "lease_token_ttl_changed", "attack", lambda: _granted(rt, A, "read_public_data", "alice", 1, rng.choice([61, 3600, 10**6]), signature=one, nonce=n2))
+    rec.add(c, "lease_token_capability_changed", "attack", lambda: _granted(rt, A, "summarize_document", "alice", 1, 60, signature=one, nonce=n2))
+    rec.add(c, "lease_signed_without_nonce", "attack", lambda: _granted(rt, A, "read_public_data", "alice", 1, 60, signature=one))
+    rec.add(c, "lease_token_exact_terms_grant", "control", lambda: _granted(rt, A, "read_public_data", "alice", 1, 60, signature=one, nonce=n2))
+    # proofs must be current: revoked lease, expired lease
+    grant("read_public_data", 3, 600)
+    p_revoked = act()
+    rt.revoke_capability(A, "read_public_data", "benchmark")
+    rec.add(c, "proof_redeem_after_lease_revoked", "attack", lambda: _redeem(rt, p_revoked))
+    ttl = rng.randint(5, 120)
+    grant("read_public_data", 3, ttl)
+    p_expired = act()
+    clock.advance(ttl + rng.randint(1, 60))
+    rec.add(c, "proof_redeem_after_lease_expired", "attack", lambda: _redeem(rt, p_expired))
+    # HMAC approval of held actions
+    grant("send_email", 3)
     held = rt.request_action(A, "send_email", "approved_outreach", 0.3)
     held_proof = rt.ledger.find("action_held", action_id=held["action_id"])[0]["payload"]["proof"]  # held, not yet approved
-    rec.add(c, "held_action_proof_presented", "attack", lambda: (str(v := rt.verify_proof(dict(held_proof))), v))
-    # HMAC approval tokens
+    rec.add(c, "held_action_proof_presented", "attack", lambda: _redeem(rt, dict(held_proof)))
     rec.add(c, "random_token", "attack", lambda: (rt.approve_action(held["action_id"], "bob", f"{rng.getrandbits(256):064x}")["decision"], True))
     rec.add(c, "token_signed_by_other_approver", "attack", lambda: (rt.approve_action(held["action_id"], "bob", sign(keys["alice"], "action", A, held["action_id"], "send_email", "bob"))["decision"], True))
     held_b = rt.request_action(A, "send_email", "approved_outreach", 0.3)
     rec.add(c, "token_for_other_action", "attack", lambda: (rt.approve_action(held["action_id"], "bob", sign(keys["bob"], "action", A, held_b["action_id"], "send_email", "bob"))["decision"], True))
-    rec.add(c, "token_for_other_capability", "attack", lambda: _granted(rt, A, "summarize_document", "alice", signature=lease_tok))
+    rec.add(c, "token_for_other_capability", "attack", lambda: _granted(rt, A, "summarize_document", "alice", signature=lease_tok, nonce=fresh()))
     rec.add(c, "unsigned_approval_with_keyring", "attack", lambda: (rt.approve_action(held["action_id"], "bob")["decision"], True))
     good = sign(keys["bob"], "action", A, held["action_id"], "send_email", "bob")
     rec.add(c, "correct_token_approves", "control", lambda: ((r := rt.approve_action(held["action_id"], "bob", good))["decision"], _authorised(r)))
     rec.add(c, "replay_action_token", "attack", lambda: (rt.approve_action(held["action_id"], "bob", good)["decision"], True))
-    # weaknesses: what replay currently gets through
-    rec.add(c, "proof_replay_verify_twice", "weakness", lambda: (str(v := rt.verify_proof(proof)), v))
-    rt.revoke_capability(A, "read_public_data", "benchmark")
-    rec.add(c, "proof_valid_after_lease_revoked", "weakness", lambda: (str(v := rt.verify_proof(proof)), v))
-    rec.add(c, "lease_token_replay", "weakness", lambda: _granted(rt, A, "read_public_data", "alice", max_actions=1, signature=lease_tok))
-    rec.add(c, "lease_token_budget_unbound", "weakness", lambda: (f"max_actions={(l := rt.grant_lease(A, 'read_public_data', 'alice', max_actions=10**6, signature=lease_tok))['max_actions']}", l["max_actions"] > 1))
+    # halts: proofs refused while halted; clear_halt tokens bind one halt
+    grant("read_public_data", 3, 600)
+    p_halted = act()
+    first = halt()
+    rec.add(c, "proof_redeem_while_halted", "attack", lambda: _redeem(rt, p_halted))
     root = rt.current_identity(A)["identity_root"]
-    halt_tok = sign(keys["bob"], "clear_halt", A, root, "", "bob")
-    rt.grant_lease(A, "send_email", "alice", max_actions=3, signature=sign(keys["alice"], "lease", A, v1, "send_email", "alice"))
-    for _ in range(2):
-        rt.request_action(A, "send_email", "approved_outreach")
-    if rt.request_action(A, "send_email", "approved_outreach", risk=1.0)["decision"] == "halted":
-        rt.clear_halt(A, "bob", "first review", halt_tok)
-    rt.grant_lease(A, "send_email", "alice", max_actions=3, signature=sign(keys["alice"], "lease", A, v1, "send_email", "alice"))
-    for _ in range(2):
-        rt.request_action(A, "send_email", "approved_outreach")
-    second = rt.request_action(A, "send_email", "approved_outreach", risk=1.0)
-    rec.add(c, "clear_halt_token_replay", "weakness", lambda: ((r := rt.clear_halt(A, "bob", "replayed", halt_tok))["status"] + f" (second halt: {second['decision']})", r["status"] == "cleared"))
-    _commit(rt, _variant(TESLA, "v2"), keys)
-    rec.add(c, "proof_valid_after_version_superseded", "weakness", lambda: (str(v := (rt.verify_proof(proof))), v))
-    up = rt.receive_personality(TESLA)  # superseded v1 uploaded again; old tokens still bind its checksum
+    rec.add(c, "clear_halt_root_bound_token", "attack", lambda: ((r := rt.clear_halt(A, "bob", "old format", sign(keys["bob"], "clear_halt", A, root, "", "bob")))["status"], r["status"] == "cleared"))
+    tok_first = sign(keys["bob"], "clear_halt", A, first, "", "bob")
+    rec.add(c, "clear_halt_bound_token_clears", "control", lambda: ((r := rt.clear_halt(A, "bob", "first review", tok_first))["status"], r["status"] == "cleared"))
+    second = halt()
+    rec.add(c, "clear_halt_token_replay", "attack", lambda: ((r := rt.clear_halt(A, "bob", "replayed", tok_first))["status"], r["status"] == "cleared"))
+    rec.add(c, "clear_halt_second_token_clears", "control", lambda: ((r := rt.clear_halt(A, "bob", "second review", sign(keys["bob"], "clear_halt", A, second, "", "bob")))["status"], r["status"] == "cleared"))
+    # a proof issued under v1 is refused once v2 is active
+    grant("read_public_data", 3, 600)
+    p_v1 = act()
+    v2, _ = _commit(rt, _variant(TESLA, "v2"), keys)
+    rec.add(c, "proof_redeem_after_version_superseded", "attack", lambda: _redeem(rt, p_v1))
+    # rollback tokens bind a nonce
+    rn1, rn2 = fresh(), fresh()
+    back = sign(keys["carol"], "rollback", A, v1, rollback_detail(v2, rn1), "carol")
+    rec.add(c, "rollback_with_nonce", "control", lambda: ((r := rt.rollback(A, "carol", v1, "back", back, rn1))["status"], r["status"] == "rolled_back"))
+    rt.rollback(A, "carol", v2, "forward", sign(keys["carol"], "rollback", A, v2, rollback_detail(v1, rn2), "carol"), rn2)
+    rec.add(c, "rollback_token_replay", "attack", lambda: (rt.rollback(A, "carol", v1, "replayed", back, rn1)["status"], True))
+    # re-uploading superseded v1: old module tokens must not re-commit it
+    up = rt.receive_personality(TESLA)
 
     def replay_modules() -> tuple[str, bool]:
-        r: dict[str, Any] = {}
         for (module, who), tok in module_tokens.items():
-            r = rt.approve_module(A, up["manifest_checksum"], module, who, tok)
+            rt.approve_module(A, up["manifest_checksum"], module, who, tok)
+        return "committed", rt.current_identity(A)["active"] == v1
+
+    rec.add(c, "module_token_replay_recommits_old_version", "attack", replay_modules)
+
+    def fresh_modules() -> tuple[str, bool]:
+        r: dict[str, Any] = {}
+        pid = up["proposal_id"]
+        plan = [(m, "alice") for m in up["awaiting"]] + [(m, "bob") for m, n in up["awaiting"].items() if n == 2]
+        for module, who in plan:
+            r = rt.approve_module(A, up["manifest_checksum"], module, who, sign(keys[who], "module", A, up["manifest_checksum"], module_detail(module, pid), who))
         return r["status"], rt.current_identity(A)["active"] == v1
 
-    rec.add(c, "module_token_replay_recommits_old_version", "weakness", replay_modules)
+    rec.add(c, "fresh_module_approvals_recommit", "control", fresh_modules)
 
 
 # ------------------------------------------------------------- observations
@@ -572,6 +654,12 @@ def run(seed: int = DEFAULT_SEED, trials: int = DEFAULT_TRIALS, timing_samples: 
             w = weaknesses.setdefault(r["attempt"], {"case": r["case"], "attempts": 0, "accepted": 0, "explanation": WEAKNESS_NOTES[r["attempt"]]})
             w["attempts"] += 1
             w["accepted"] += int(r["accepted"])
+    former = {}
+    for r in rec.rows:
+        if r["attempt"] in FORMER_WEAKNESSES:
+            f = former.setdefault(r["attempt"], {"case": r["case"], "attempts": 0, "accepted": 0, "fix": FORMER_WEAKNESSES[r["attempt"]]})
+            f["attempts"] += 1
+            f["accepted"] += int(r["accepted"])
     false_rows = [r for r in rec.rows if r["kind"] == "attack" and r["accepted"]]
     failed_controls = [r for r in rec.rows if r["kind"] == "control" and not r["accepted"]]
     outcomes: dict[str, dict[str, int]] = {}
@@ -595,9 +683,11 @@ def run(seed: int = DEFAULT_SEED, trials: int = DEFAULT_TRIALS, timing_samples: 
             "rollback_revocation": {**rev, "lease_revocation_correctness": round(rev["leases_revoked"] / rev["leases_expected_revoked"], 4) if rev["leases_expected_revoked"] else None, "held_cancellation_correctness": round(rev["held_cancelled"] / rev["held_expected_cancelled"], 4) if rev["held_expected_cancelled"] else None},
             "ledger_verification": {**led, "detection_rate": round(led["tamper_detected"] / led["tamper_cases"], 4) if led["tamper_cases"] else None, "operator_rewrite_detection_rate": round(led["operator_rewrites_detected"] / led["operator_rewrites"], 4) if led["operator_rewrites"] else None},
             "weakness_acceptances": sum(w["accepted"] for w in weaknesses.values()),
+            "former_weaknesses_accepted": sum(f["accepted"] for f in former.values()),
         },
         "cases": cases,
         "weaknesses": weaknesses,
+        "former_weaknesses": former,
         "false_approval_details": false_rows,
         "failed_controls": failed_controls,
         "outcomes": outcomes,
@@ -630,9 +720,20 @@ def markdown(res: dict[str, Any]) -> str:
         f"- Ledger tampering by someone who edits only `ledger.jsonl`: {lv['tamper_detected']}/{lv['tamper_cases']} detected; {refused}/{tried} reopened runtimes refused the next action as read-only.",
         f"- Ledger rewritten together with `state.json` (operator-level access): {lv['operator_rewrites_detected']}/{lv['operator_rewrites']} detected. This is the documented limit of a tamper-evident, not tamper-proof, ledger.",
         "",
-        "## Weaknesses the benchmark shows",
+        "## Former weaknesses, now rejected",
         "",
-        "These attacks get through today. They are counted here rather than as false approvals because the runtime does not currently claim to stop them; see [THREAT-MODEL.md](../THREAT-MODEL.md).",
+        "The first version of this benchmark found these replays getting through. They are now ordinary attacks (counted above), and `--check` fails if any of them is accepted again.",
+        "",
+        "| Attempt | Accepted | Fix |",
+        "|---|---:|---|",
+    ]
+    for name, f in res["former_weaknesses"].items():
+        out.append(f"| {name} | {f['accepted']}/{f['attempts']} | {f['fix']} |")
+    out += [
+        "",
+        "## Remaining documented limitation",
+        "",
+        "These still get through. They are counted separately rather than as false approvals because the runtime does not claim to stop them; see [THREAT-MODEL.md](../THREAT-MODEL.md).",
         "",
         "| Attempt | Accepted | Why |",
         "|---|---:|---|",
@@ -670,8 +771,10 @@ def main(argv: list[str] | None = None) -> int:
     md = markdown(res)
     Path(args.out, "results.md").write_text(md, encoding="utf-8")
     print(md)
-    if args.check and (res["summary"]["false_approvals"] or res["summary"]["controls_failed"]):
-        print("check failed: false approvals or failed controls", file=sys.stderr)
+    s = res["summary"]
+    missing = set(FORMER_WEAKNESSES) - set(res["former_weaknesses"])
+    if args.check and (s["false_approvals"] or s["controls_failed"] or s["former_weaknesses_accepted"] or missing):
+        print(f"check failed: false approvals {s['false_approvals']}, failed controls {s['controls_failed']}, former weaknesses accepted {s['former_weaknesses_accepted']}, former-weakness cases missing {sorted(missing)}", file=sys.stderr)
         return 1
     return 0
 
