@@ -5,6 +5,7 @@ Governed, reversible avatar personalities with leased capabilities and a hash-ch
 Research prototype from Spark AI NLP (Fredericton, New Brunswick, Canada). Classical, deterministic, standard-library-only Python 3.10+. It is not a product, it has not been tested against real attackers, and it does not make an AI model safe on its own.
 
 - Live demo page: https://sparkainlp-x.github.io/identity-runtime/
+- Animated walkthrough: https://sparkainlp-x.github.io/identity-runtime/animation.html (one recorded run of the Tesla-inspired example, step by step; keyboard controls, captions, respects reduced-motion settings)
 - Author: Jean-François Brisson ([ORCID 0009-0000-9778-5374](https://orcid.org/0009-0000-9778-5374)), Spark AI NLP
 - License: AGPL-3.0-only (commercial licensing: [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md))
 - DOI: pending (a Zenodo DOI is minted only when a GitHub release is cut)
@@ -111,7 +112,7 @@ python -m pip install pytest
 python -m pytest -q
 ```
 
-68 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static page build and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
+71 tests run in CI on Python 3.10-3.13 with warnings treated as errors. They cover the full Tesla lifecycle, quorum rules, self-approval refusal, lease budgets, expiry and clamping, held and approved actions, revocation, rollback (including across restarts and with a tampered version file), malicious and injected manifests, ledger tampering, truncation and tail deletion, signed approvals, the CLI, the static pages (including the animation's embedded data) and the stdlib-only rule. [docs/REVIEW.md](docs/REVIEW.md) lists what was wrong with the first draft and how each item was handled.
 
 ## Citation
 
