@@ -1,7 +1,8 @@
 """Build the static GitHub Pages site: run the demo and render it as plain HTML.
 
 Usage: python scripts/build_site.py _site
-No JavaScript, no backend; the page shows output recorded at build time.
+index.html has no JavaScript; animation.html uses inline vanilla JavaScript
+with data recorded at build time. No backend and no external requests.
 """
 
 from __future__ import annotations
@@ -17,6 +18,21 @@ sys.path.insert(0, str(ROOT))
 
 from identity_runtime import __version__  # noqa: E402
 from identity_runtime.demo import run_demo  # noqa: E402
+from identity_runtime.story import record_story  # noqa: E402
+
+TEMPLATE = ROOT / "site" / "animation.template.html"
+PLACEHOLDER = "/*STORY_DATA*/"
+
+
+def build_animation(out_dir: Path) -> Path:
+    """Write animation.html with the recorded story embedded as inline JSON."""
+    data = json.dumps(record_story(), ensure_ascii=False, separators=(",", ":"))
+    data = data.replace("<", "\\u003c")  # "<" only occurs inside JSON strings
+    template = TEMPLATE.read_text(encoding="utf-8")
+    assert template.count(PLACEHOLDER) == 1
+    target = out_dir / "animation.html"
+    target.write_text(template.replace(PLACEHOLDER, data), encoding="utf-8")
+    return target
 
 CSS = """
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1d1d1f;background:#fff}
@@ -66,6 +82,7 @@ def build(out_dir: Path) -> Path:
 <p class="note">Research prototype. Classical, deterministic, standard-library Python. This page shows the output of
 <code>python -m identity_runtime demo</code> (version {html.escape(__version__)}), recorded when the page was built. Nothing runs in your browser and no data is sent anywhere.</p>
 <p>The demo uploads a fictional educational character inspired by the historical inventor Nikola Tesla (1856-1943). It is not Nikola Tesla and is not affiliated with Tesla, Inc. The upload is checked against the schema and simulated, waits for human approvals (two distinct people for tool and safety policy), commits, then requests actions under human-granted leases.</p>
+<p><a href="animation.html">Animated walkthrough of the same lifecycle</a> (keyboard controls, captions, respects reduced-motion settings).</p>
 <h2>Steps</h2>
 <table><thead><tr><th>#</th><th>Step</th><th>Outcome</th></tr></thead><tbody>
 {rows}
@@ -87,6 +104,7 @@ def build(out_dir: Path) -> Path:
     target = out_dir / "index.html"
     target.write_text(page, encoding="utf-8")
     (out_dir / ".nojekyll").write_text("", encoding="utf-8")
+    build_animation(out_dir)
     return target
 
 

@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>identity-runtime: animated lifecycle</title>
+<meta name="description" content="Step-by-step animation of the identity-runtime lifecycle, drawn from recorded output of the real runtime. Research prototype.">
+<style>
+:root{--bg:#0b1630;--panel:#12224a;--panel2:#0f1d3f;--line:#2a3d6e;--text:#e8ecf6;--muted:#b3bfd9;--gold:#c9a84c;--cyan:#4fd1e8;--red:#f08a80;--green:#7fd8a6;--t:.45s}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+a{color:var(--cyan)}
+code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}
+header{padding:1.2rem 1.5rem .4rem;max-width:84rem;margin:0 auto}
+header h1{margin:0;font-size:1.45rem;color:var(--gold);font-weight:650;letter-spacing:.01em}
+header p{margin:.3rem 0 0;color:var(--muted);max-width:60rem}
+.wrap{max-width:84rem;margin:0 auto;padding:0 1.5rem 1.5rem;display:grid;grid-template-columns:17rem 1fr;gap:1rem}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}}
+nav ol{list-style:none;margin:0;padding:0;counter-reset:s}
+nav li{counter-increment:s}
+nav button{all:unset;display:block;width:100%;box-sizing:border-box;padding:.38rem .6rem .38rem 2.2rem;border-radius:.4rem;color:var(--muted);cursor:pointer;position:relative;font-size:.9rem}
+nav button::before{content:counter(s);position:absolute;left:.55rem;top:.38rem;width:1.2rem;text-align:right;color:var(--line);font-variant-numeric:tabular-nums}
+nav button[aria-current="step"]{background:var(--panel);color:var(--text);box-shadow:inset 3px 0 0 var(--gold)}
+nav button[aria-current="step"]::before{color:var(--gold)}
+nav button.done{color:var(--text)}
+nav button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.2rem 0 .6rem}
+.controls button,.controls select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:.4rem;padding:.4rem .75rem;font:inherit;font-size:.88rem;cursor:pointer}
+.controls button:hover{border-color:var(--gold)}
+.controls button:focus-visible,.controls select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.controls .primary{background:var(--gold);color:#1a1405;border-color:var(--gold);font-weight:600;min-width:5.5rem}
+.controls .hint{color:var(--muted);font-size:.8rem}
+.progress{height:4px;background:var(--panel);border-radius:2px;overflow:hidden;margin-bottom:.6rem}
+.progress div{height:100%;background:linear-gradient(90deg,var(--gold),var(--cyan));width:0;transition:width var(--t)}
+.caption{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:.5rem;padding:.75rem 1rem;min-height:4.6rem;margin-bottom:1rem}
+.caption h2{margin:0 0 .2rem;font-size:1.02rem;color:var(--gold)}
+.caption p{margin:0;color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:.8rem}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:.6rem;padding:.75rem .9rem;transition:border-color var(--t),box-shadow var(--t),opacity var(--t);opacity:.55}
+.card.on{opacity:1}
+.card.focus{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 22px rgba(201,168,76,.18)}
+.card h3{margin:0 0 .5rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);font-weight:600}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}.c6{grid-column:span 6}
+@media (max-width:1100px){.c4,.c5,.c7,.c8,.c6{grid-column:span 12}}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.2rem .7rem;font-size:.86rem}
+dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
+.modules{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+@media (max-width:600px){.modules{grid-template-columns:repeat(2,1fr)}}
+.mod{border:1px solid var(--line);border-radius:.45rem;padding:.45rem .5rem;font-size:.82rem;background:var(--panel);transition:border-color var(--t),background var(--t),transform var(--t);opacity:.35}
+.mod.seen{opacity:1}
+.mod .name{font-weight:600}
+.mod .state{font-size:.74rem;color:var(--muted)}
+.mod.auto{border-color:var(--cyan)}
+.mod.ok{border-color:var(--gold);background:rgba(201,168,76,.10)}
+.chips{display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.25rem;min-height:1.1rem}
+.chip{font-size:.7rem;padding:.05rem .4rem;border-radius:1rem;border:1px solid var(--gold);color:var(--gold);animation:pop var(--t) ease-out}
+.chip.auto{border-color:var(--cyan);color:var(--cyan)}
+@keyframes pop{from{transform:scale(.6)}to{transform:none}}
+ul.probes{list-style:none;margin:0;padding:0;font-size:.8rem;display:grid;gap:.2rem}
+ul.probes li{display:flex;justify-content:space-between;gap:.5rem;border-bottom:1px dashed var(--line);padding-bottom:.15rem;opacity:.3;transition:opacity var(--t)}
+ul.probes li.seen{opacity:1}
+.tag{font-size:.7rem;padding:.02rem .4rem;border-radius:.3rem;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
+.tag.good{border-color:var(--green);color:var(--green)}
+.tag.warn{border-color:var(--gold);color:var(--gold)}
+.tag.bad{border-color:var(--red);color:var(--red)}
+.tag.info{border-color:var(--cyan);color:var(--cyan)}
+.lease{margin-bottom:.55rem;font-size:.84rem}
+.lease .row{display:flex;justify-content:space-between;gap:.5rem}
+.meter{height:.55rem;background:var(--panel);border:1px solid var(--line);border-radius:.3rem;overflow:hidden;margin-top:.25rem;display:flex}
+.meter i{display:block;height:100%;transition:width var(--t)}
+.meter .used{background:var(--gold)}.meter .res{background:repeating-linear-gradient(45deg,var(--cyan) 0 4px,transparent 4px 8px)}
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:.4rem;font-size:.82rem;margin-top:.3rem}
+.node{border:1px solid var(--line);border-radius:.45rem;padding:.45rem;text-align:center;background:var(--panel);min-height:3.4rem;display:flex;flex-direction:column;justify-content:center}
+.node b{font-size:.78rem;color:var(--muted);font-weight:500}
+.arrow{color:var(--line);font-size:1.1rem;transition:color var(--t)}
+.flow.live .arrow{color:var(--gold)}
+.outcome.good{border-color:var(--green)}.outcome.warn{border-color:var(--gold)}.outcome.bad{border-color:var(--red)}
+.fabric{display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:.8rem;align-items:start}
+@media (max-width:800px){.fabric{grid-template-columns:1fr}}
+svg.oes{width:100%;height:auto;display:block;background:#081127;border-radius:.4rem}
+svg.oes rect.m{transition:fill var(--t)}
+svg.oes rect.s{fill:none;stroke:#1d2e57;stroke-width:1.2;transition:stroke var(--t)}
+svg.oes rect.s.trip{stroke:var(--gold);stroke-width:2}
+.legend{font-size:.8rem;color:var(--muted)}
+.legend .sw{display:inline-block;width:.8rem;height:.8rem;border-radius:2px;vertical-align:-1px;margin-right:.3rem}
+.legend dl{margin-top:.5rem}
+.chain{display:flex;gap:.35rem;overflow-x:auto;padding:.3rem .1rem .6rem;scroll-behavior:smooth}
+.blk{flex:0 0 7.3rem;border:1px solid var(--line);border-radius:.4rem;padding:.35rem .4rem;background:var(--panel);font-size:.7rem;opacity:.18;transition:opacity var(--t),border-color var(--t);position:relative}
+.blk.seen{opacity:1}
+.blk.new{border-color:var(--cyan)}
+.blk.ok{border-color:var(--green)}
+.blk.badblk{border-color:var(--red)}
+.blk .ev{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk .h{color:var(--muted)}
+.blk .seq{color:var(--gold)}
+.blk .chk{position:absolute;right:.35rem;top:.3rem;color:var(--green);font-size:.66rem}
+.side{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media (max-width:800px){.side{grid-template-columns:1fr}}
+.side .card{opacity:1;border-color:var(--red)}
+.side ul{margin:.3rem 0 0;padding-left:1.1rem;font-size:.84rem}
+.hidden{display:none}
+.small{font-size:.8rem;color:var(--muted);margin:.3rem 0 0}
+footer{max-width:84rem;margin:0 auto;padding:1rem 1.5rem 2rem;color:var(--muted);font-size:.82rem;border-top:1px solid var(--line)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){:root{--t:0s}.chip{animation:none}.chain{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>identity-runtime: animated lifecycle</h1>
+  <p>A walk through one run of the real runtime with the example personality <span id="dispName"></span>. Every hash, count and decision on this page was recorded from that run when the page was built (version <span id="ver"></span>). Nothing runs in your browser.</p>
+</header>
+<div class="wrap">
+  <nav aria-label="Lifecycle steps"><ol id="steps"></ol></nav>
+  <main>
+    <div class="controls" role="group" aria-label="Playback controls">
+      <button type="button" id="prev" aria-label="Previous step">Previous</button>
+      <button type="button" id="play" class="primary" aria-pressed="false">Play</button>
+      <button type="button" id="next" aria-label="Next step">Next</button>
+      <button type="button" id="restart">Restart</button>
+      <label class="hint">Speed
+        <select id="speed" aria-label="Playback speed"><option value="6500">Slow</option><option value="4200" selected>Normal</option><option value="2600">Fast</option></select>
+      </label>
+      <span class="hint">Keys: Space play/pause, Left/Right step, Home/End</span>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <section class="caption" aria-live="polite" aria-atomic="true"><h2 id="capTitle"></h2><p id="capText"></p></section>
+
+    <div class="grid" id="stage">
+      <section class="c12 side hidden" id="cSide" aria-label="Rejection cases">
+        <div class="card"><h3>Malicious manifest rejected</h3><p style="margin:0;font-size:.84rem" id="malSummary"></p><ul id="malErrors"></ul></div>
+        <div class="card"><h3>Tampered ledger fails verify</h3><p style="margin:0;font-size:.84rem" id="tamSummary"></p></div>
+      </section>
+      <section class="card c5" id="cIdentity" aria-labelledby="hIdentity">
+        <h3 id="hIdentity">Identity</h3>
+        <dl>
+          <dt>Avatar</dt><dd class="mono" id="avatarId"></dd>
+          <dt>Identity root</dt><dd class="mono" id="root">not created</dd>
+          <dt>Active version</dt><dd class="mono" id="active">none</dd>
+          <dt>Earlier versions</dt><dd class="mono" id="history">none</dd>
+          <dt>Policy hash</dt><dd class="mono" id="policy">not compiled</dd>
+        </dl>
+      </section>
+      <section class="card c7" id="cSim" aria-labelledby="hSim">
+        <h3 id="hSim">Schema check and shadow simulation</h3>
+        <p style="margin:0 0 .4rem;font-size:.84rem" id="simSummary">Waiting for an upload.</p>
+        <ul class="probes" id="probes"></ul>
+      </section>
+      <section class="card c12" id="cModules" aria-labelledby="hModules">
+        <h3 id="hModules">Personality modules and approvals</h3>
+        <div class="modules" id="modules"></div>
+      </section>
+      <section class="card c5" id="cLeases" aria-labelledby="hLeases">
+        <h3 id="hLeases">Capability leases</h3>
+        <div id="leases"><p style="margin:0;font-size:.84rem;color:var(--muted)">No leases. A person grants each one.</p></div>
+      </section>
+      <section class="card c7" id="cAction" aria-labelledby="hAction">
+        <h3 id="hAction">Action request</h3>
+        <div class="flow" id="flow">
+          <div class="node"><b>avatar asks</b><span id="fReq">nothing yet</span></div><span class="arrow" aria-hidden="true">&rarr;</span>
+          <div class="node"><b>gate checks</b><span id="fGate">lease, context, policy, OES-61440</span></div><span class="arrow" aria-hidden="true">&rarr;</span>
+          <div class="node outcome" id="fOutNode"><b>outcome</b><span id="fOut">none</span></div>
+        </div>
+        <p class="mono" style="margin:.5rem 0 0;color:var(--muted)" id="fProof"></p>
+      </section>
+      <section class="card c12" id="cFabric" aria-labelledby="hFabric">
+        <h3 id="hFabric">OES-61440 deterministic threshold model</h3>
+        <div class="fabric">
+          <svg class="oes" id="oes" role="img" aria-labelledby="oesDesc"><title id="oesDesc">Grid of 120 sectors, each holding 4 supervisors of 4 membranes, 1,920 membranes in all.</title></svg>
+          <div class="legend">
+            <p style="margin:0">120 sectors (outlined) &times; 4 supervisors &times; 4 membranes = 1,920 membranes, each with 32 fixed threshold channels: 61,440 comparisons per request. Nothing is learned; weights and thresholds come from SHA-256 of each channel index.</p>
+            <p style="margin:.4rem 0 0"><span class="sw" style="background:#1a2a52"></span>no channels over threshold<br><span class="sw" style="background:#2f8fa3"></span>some channels over threshold<br><span class="sw" style="background:var(--gold)"></span>membrane tripped (17 of 32 or more)<br><span class="sw" style="border:2px solid var(--gold)"></span>sector tripped</p>
+            <dl id="fabStats"><dt>Request</dt><dd>none</dd></dl>
+          </div>
+        </div>
+      </section>
+      <section class="card c12" id="cLedger" aria-labelledby="hLedger">
+        <h3 id="hLedger">Hash-chained ledger</h3>
+        <div class="chain" id="chain" tabindex="0" aria-label="Ledger entries, scrollable"></div>
+        <p style="margin:0;font-size:.82rem;color:var(--muted)" id="ledgerNote">Each entry stores the hash of the entry before it. Changing any entry breaks every link after it.</p>
+      </section>
+    </div>
+  </main>
+</div>
+<footer>
+  <p>Research prototype from Spark AI NLP, Fredericton, New Brunswick, Canada. Classical, deterministic, standard-library Python. The OES-61440 model is a fixed set of uncalibrated thresholds, not a learned model and not a safety guarantee. Text screening catches copy-pasted attacks, not paraphrases; the runtime authorises and records but executes nothing.</p>
+  <p>The persona shown is a fictional educational character inspired by the historical inventor Nikola Tesla (1856-1943). It is not Nikola Tesla and is not affiliated with or endorsed by Tesla, Inc.</p>
+  <p><a href="./">Demo output page</a> &middot; <a href="https://github.com/sparkainlp-x/identity-runtime">Source on GitHub</a> &middot; AGPL-3.0-only &middot; Jean-François Brisson</p>
+</footer>
+<script id="story" type="application/json">/*STORY_DATA*/</script>
+<script>
+(function(){
+"use strict";
+var D=JSON.parse(document.getElementById("story").textContent);
+var $=function(id){return document.getElementById(id);};
+var short=function(h,n){return h?String(h).slice(0,n||12):"";};
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var SVGNS="http://www.w3.org/2000/svg";
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+
+$("dispName").textContent=D.display_name;$("ver").textContent=D.version;$("avatarId").textContent=D.avatar_id;
+
+var MODS=["identity","reasoning","memory_policy","interaction","tool_policy","safety_policy","voice","appearance"].filter(function(m){return m in D.module_checksums;});
+var req=function(m){return D.auto_approved.indexOf(m)>=0?0:(D.required[m]||0);};
+var aliceMods=D.approvals.filter(function(a){return a.approver==="alice";}).map(function(a){return a.module;});
+var bobMods=D.approvals.filter(function(a){return a.approver==="bob";}).map(function(a){return a.module;});
+var leaseRead=D.leases[0],leaseMail=D.leases[1];
+var lastSeq=D.ledger.length-1;
+var ttl=function(l){return Math.round((l.expires_ns-l.issued_ns)/1e9);};
+var probesPassed=D.simulation.probes.filter(function(p){return p.passed;}).length;
+
+var STEPS=[
+ {t:"Start",c:"This page replays one recorded run of identity-runtime. Press Play, or use the arrow keys, to step through it.",seq:-1},
+ {t:"Identity root created",c:"The first upload for avatar "+D.avatar_id+" creates a fixed identity root ("+short(D.identity_root)+"...). Every later version attaches to this root, and a manifest cannot change it.",seq:0,focus:["cIdentity"]},
+ {t:"Manifest uploaded and schema-checked",c:"The personality file is checked against the manifest schema and split into "+MODS.length+" modules, each with its own SHA-256 checksum. Uploading does not activate it.",seq:D.marks.upload,focus:["cModules","cSim"]},
+ {t:"Shadow simulation",c:"Every text field is screened for injection and self-escalation wording ("+D.simulation.findings.length+" findings), and "+D.simulation.probes.length+" adversarial requests are replayed against the compiled policy ("+probesPassed+" of "+D.simulation.probes.length+" handled safely). No model is run.",seq:D.marks.upload,focus:["cSim"]},
+ {t:"Presentation modules auto-approved",c:"Voice and appearance only change presentation, so they are approved automatically once the checks pass. The other modules wait for people.",seq:D.marks.upload,focus:["cModules"]},
+ {t:"First approver: alice",c:"alice approves "+aliceMods.length+" modules. Identity, reasoning, memory policy and interaction need one person; tool policy and safety policy still need a second, different person.",seq:D.marks.first_approvals,focus:["cModules"]},
+ {t:"Second approver: bob, then commit",c:"bob approves "+bobMods.join(" and ")+". With two distinct approvers on both quorum modules, version "+short(D.manifest_checksum)+" commits and becomes active.",seq:D.marks.commit,focus:["cModules","cIdentity"]},
+ {t:"Leases granted by a person",c:"alice grants two short leases: "+leaseRead.capability+" ("+leaseRead.max_actions+" actions, "+ttl(leaseRead)+" s) and "+leaseMail.capability+" ("+leaseMail.max_actions+" action, "+ttl(leaseMail)+" s, always needs a human).",seq:D.marks.leases,focus:["cLeases"]},
+ {t:"Low-risk action runs on its own",c:"The avatar asks to "+D.low_risk.description.toLowerCase()+" (effective risk "+D.low_risk.effective_risk+"). The lease is valid, the context is allowed and "+D.low_risk.fabric.tripped_channels+" of 61,440 threshold channels fire, so it is authorised without a human and a proof is recorded.",seq:D.marks.low_risk,focus:["cAction","cFabric","cLeases"],fab:"low"},
+ {t:"send_email is held for a human",c:"The avatar asks to "+D.held.description.toLowerCase()+". The policy always requires a human for email, and at effective risk "+D.held.effective_risk+", "+D.held.fabric.tripped_sectors+" of 120 sectors trip. The action is held and one unit of the lease is reserved.",seq:D.marks.held,focus:["cAction","cFabric","cLeases"],fab:"held"},
+ {t:"bob approves the held email",c:"bob approves the held action. The lease is used exactly once and the human-approved proof ("+short(D.approved.proof_hash)+"...) is written to the ledger.",seq:D.marks.approved,focus:["cAction","cLeases"],fab:"held"},
+ {t:"send_email revoked",c:"The operator revokes send_email. The next email request is denied: "+D.revoke.after.reason.replace(/_/g," ")+".",seq:D.marks.revoke,focus:["cLeases","cAction"]},
+ {t:"New version, then rollback",c:"A second version ("+D.v2.change+") is approved and committed, which revokes every lease. carol then rolls back: the earlier version "+short(D.rollback.active)+" is restored from the version store and checked against its checksum.",seq:D.marks.rollback,focus:["cIdentity","cLeases"]},
+ {t:"Ledger hash chain verified",c:"All "+D.verify.entries+" ledger entries are re-hashed and every link to the previous entry matches. Verification result: "+(D.verify.valid?"valid":"invalid")+".",seq:lastSeq,focus:["cLedger"],verify:true},
+ {t:"What gets rejected",c:"A manifest that tries to enable modify_safety_policy and contains 'ignore previous instructions' is rejected before it can wait for approval. A copy of the ledger with one approver name changed fails verification at line "+D.tampered.line+".",seq:lastSeq,focus:["cSide","cLedger"],verify:true,side:true}
+];
+
+/* ---------- static scaffolding ---------- */
+var stepsOl=$("steps");
+STEPS.forEach(function(s,i){var li=el("li"),b=el("button",null,s.t);b.type="button";b.addEventListener("click",function(){stop();go(i);});li.appendChild(b);stepsOl.appendChild(li);});
+var stepBtns=stepsOl.querySelectorAll("button");
+
+var modEls={};
+MODS.forEach(function(m){var d=el("div","mod");d.appendChild(el("div","name",m));d.appendChild(el("div","state mono",short(D.module_checksums[m],10)));var st=el("div","state");d.appendChild(st);var ch=el("div","chips");d.appendChild(ch);$("modules").appendChild(d);modEls[m]={box:d,st:st,ch:ch};});
+
+D.simulation.probes.forEach(function(p){var li=el("li");li.appendChild(el("span",null,p.prompt));var cls=p.outcome==="held_for_human"?"warn":(p.outcome==="not_granted"?"good":"bad");li.appendChild(el("span","tag "+cls,p.outcome.replace(/_/g," ")));$("probes").appendChild(li);});
+var probeLis=$("probes").querySelectorAll("li");
+
+var blocks=D.ledger.map(function(e){var b=el("div","blk");b.appendChild(el("div","seq mono","#"+e.seq));b.appendChild(el("div","ev",e.event.replace(/_/g," ")));b.appendChild(el("div","h mono","hash "+short(e.hash,8)));b.appendChild(el("div","h mono","prev "+short(e.prev_hash,8)));var c=el("span","chk","ok");c.style.display="none";b.appendChild(c);b.title=e.event+" "+e.hash;$("chain").appendChild(b);return b;});
+
+/* OES-61440 grid: sector k at (k%12, k/12); supervisor j and membrane i in 2x2 blocks */
+var svg=$("oes"),CELL=9,SEC=4*CELL+8,COLS=12,ROWS=Math.ceil(D.fabric_shape.sectors/COLS);
+svg.setAttribute("viewBox","0 0 "+(COLS*SEC+6)+" "+(ROWS*SEC+6));
+var memRects=[],secRects=[];
+for(var k=0;k<D.fabric_shape.sectors;k++){
+  var sx=3+(k%COLS)*SEC+4,sy=3+Math.floor(k/COLS)*SEC+4;
+  for(var j=0;j<4;j++)for(var i=0;i<4;i++){
+    var r=document.createElementNS(SVGNS,"rect");
+    r.setAttribute("x",sx+((j%2)*2+(i%2))*CELL);r.setAttribute("y",sy+(Math.floor(j/2)*2+Math.floor(i/2))*CELL);
+    r.setAttribute("width",CELL-1.5);r.setAttribute("height",CELL-1.5);r.setAttribute("rx",1.5);r.setAttribute("class","m");r.setAttribute("fill","#1a2a52");
+    if(!reduce)r.style.transitionDelay=(k*7)+"ms";
+    svg.appendChild(r);memRects[k*16+j*4+i]=r;
+  }
+  var s=document.createElementNS(SVGNS,"rect");
+  s.setAttribute("x",sx-3);s.setAttribute("y",sy-3);s.setAttribute("width",4*CELL+4.5);s.setAttribute("height",4*CELL+4.5);s.setAttribute("rx",3);s.setAttribute("class","s");
+  if(!reduce)s.style.transitionDelay=(k*7)+"ms";
+  svg.appendChild(s);secRects.push(s);
+}
+function mix(a,b,t){var pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)],pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];return "rgb("+pa.map(function(v,n){return Math.round(v+(pb[n]-v)*t);}).join(",")+")";}
+function drawFabric(f,label){
+  var q=D.fabric_shape.membrane_quorum,cpm=D.fabric_shape.channels_per_membrane;
+  memRects.forEach(function(r,m){var c=f?f.membrane_counts[m]:0;r.setAttribute("fill",!f||c===0?"#1a2a52":(c>=q?"#c9a84c":mix("#1f4a66","#2f8fa3",c/cpm)));});
+  secRects.forEach(function(s,k){s.setAttribute("class","s"+(f&&f.sector_trips[k]?" trip":""));});
+  var st=$("fabStats");st.textContent="";
+  var rows=f?[["Request",label],["Signals","risk "+f.signals.risk+", capability "+f.signals.capability_risk+", lease use "+(+f.signals.lease_utilisation).toFixed(2)],["Channels over threshold",f.tripped_channels.toLocaleString("en")+" / 61,440"],["Membranes tripped",f.tripped_membranes+" / 1,920"],["Supervisors tripped",f.tripped_supervisors+" / 480"],["Sectors tripped",f.tripped_sectors+" / 120"],["Root",f.halt?"halt":(f.checkpoint?"checkpoint: hold for a human":"no checkpoint")]]:[["Request","none"]];
+  rows.forEach(function(p){st.appendChild(el("dt",null,p[0]));st.appendChild(el("dd",null,p[1]));});
+  svg.querySelector("title").textContent=f?("OES-61440 grid for "+label+": "+f.tripped_membranes+" of 1,920 membranes and "+f.tripped_sectors+" of 120 sectors tripped."):"OES-61440 grid, idle.";
+}
+
+/* ---------- state per step (computed from scratch so stepping back works) ---------- */
+function leaseRow(l,used,reserved,state){
+  var d=el("div","lease"),row=el("div","row");row.appendChild(el("span","mono",l.capability));
+  var tag=state==="revoked"?"bad":(l.requires_human_approval?"warn":"good");
+  row.appendChild(el("span","tag "+tag,state==="revoked"?"revoked":(l.requires_human_approval?"human approval":"autonomous")));d.appendChild(row);
+  var m=el("div","meter"),u=el("i","used"),r=el("i","res");u.style.width=(100*used/l.max_actions)+"%";r.style.width=(100*reserved/l.max_actions)+"%";m.appendChild(u);m.appendChild(r);d.appendChild(m);
+  d.appendChild(el("div","small mono",used+" used, "+reserved+" reserved of "+l.max_actions+" | "+short(l.lease_id,18)+" | contexts: "+l.allowed_contexts.join(", ")));
+  return d;
+}
+function render(n){
+  var s=STEPS[n];
+  $("capTitle").textContent=(n+1)+" of "+STEPS.length+": "+s.t;$("capText").textContent=s.c;
+  $("bar").style.width=(100*n/(STEPS.length-1))+"%";
+  stepBtns.forEach(function(b,i){if(i===n)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");b.classList.toggle("done",i<n);});
+  ["cIdentity","cSim","cModules","cLeases","cAction","cFabric","cLedger"].forEach(function(id){$(id).classList.toggle("focus",(s.focus||[]).indexOf(id)>=0);$(id).classList.toggle("on",n>=1);});
+
+  /* identity */
+  $("root").textContent=n>=1?short(D.identity_root,24)+"...":"not created";
+  var active="none",hist="none";
+  if(n>=6){active=short(D.manifest_checksum,24)+"... (v1.0.0)";}
+  if(n>=12){active=short(D.rollback.active,24)+"... (v1.0.0, restored)";hist=short(D.v2.manifest_checksum,16)+"... (v1.1.0)";}
+  $("active").textContent=active;$("history").textContent=hist;
+  $("policy").textContent=n>=2?short(D.policy_hash,24)+"...":"not compiled";
+
+  /* simulation */
+  $("simSummary").textContent=n<2?"Waiting for an upload.":(n<3?"Schema check passed. Simulation next.":"Text findings: "+D.simulation.findings.length+". Adversarial probes handled safely: "+probesPassed+" of "+D.simulation.probes.length+". Model hook: "+(D.simulation.model_hook_used?"on":"off")+".");
+  probeLis.forEach(function(li){li.classList.toggle("seen",n>=3);});
+
+  /* modules */
+  MODS.forEach(function(m){
+    var e=modEls[m],need=req(m),appr=[];
+    if(n>=5&&aliceMods.indexOf(m)>=0)appr.push("alice");
+    if(n>=6&&bobMods.indexOf(m)>=0)appr.push("bob");
+    var auto=need===0&&n>=4;
+    e.box.classList.toggle("seen",n>=2);e.box.classList.toggle("auto",auto);e.box.classList.toggle("ok",need>0&&appr.length>=need);
+    e.st.textContent=n<2?"":(need===0?(auto?"auto-approved":"auto (after checks)"):(appr.length>=need?"approved":"needs "+need+" approver"+(need>1?"s":"")+" ("+appr.length+"/"+need+")"));
+    e.ch.textContent="";if(auto)e.ch.appendChild(el("span","chip auto","runtime:auto"));appr.forEach(function(a){e.ch.appendChild(el("span","chip",a));});
+  });
+
+  /* leases */
+  var L=$("leases");L.textContent="";
+  if(n<7){L.appendChild(el("p","small","No leases. A person grants each one."));}
+  else{
+    var rUsed=n>=8?1:0,mUsed=n>=10?1:0,mRes=n===9?1:0;
+    L.appendChild(leaseRow(leaseRead,rUsed,0,n>=12?"revoked":"valid"));
+    L.appendChild(leaseRow(leaseMail,mUsed,mRes,n>=11?"revoked":"valid"));
+    if(n>=12)L.appendChild(el("p","small","Committing v1.1.0 and the rollback revoked every lease. New leases need a person again."));
+  }
+
+  /* action */
+  var req_="nothing yet",out="none",cls="",proof="",live=false;
+  if(n===8){req_="read_public_data, context research";out=D.low_risk.decision.replace(/_/g," ");cls="good";proof="proof "+short(D.low_risk.proof_hash,32)+"...";live=true;}
+  if(n===9){req_="send_email, context approved_outreach";out="held for human: "+D.held.reasons.join(", ").replace(/_/g," ");cls="warn";proof="action "+D.held.action_id;live=true;}
+  if(n===10){req_="send_email (held action)";out="authorised by human ("+D.approved.approved_by+")";cls="good";proof="proof "+short(D.approved.proof_hash,32)+"...";live=true;}
+  if(n===11){req_="send_email again";out="denied: "+D.revoke.after.reason.replace(/_/g," ");cls="bad";proof="revoked "+D.revoke.revoked_leases.length+" lease";live=true;}
+  $("fReq").textContent=req_;$("fOut").textContent=out;$("fOutNode").className="node outcome "+cls;$("fProof").textContent=proof;$("flow").classList.toggle("live",live);
+
+  /* fabric */
+  if(s.fab==="low")drawFabric(D.low_risk.fabric,"read_public_data (low risk)");
+  else if(s.fab==="held")drawFabric(D.held.fabric,"send_email");
+  else drawFabric(null);
+
+  /* ledger */
+  var prevSeq=n>0?STEPS[n-1].seq:-1;
+  blocks.forEach(function(b,i){b.classList.toggle("seen",i<=s.seq);b.classList.toggle("new",i<=s.seq&&i>prevSeq&&!s.verify);b.classList.toggle("ok",!!s.verify);b.querySelector(".chk").style.display=s.verify?"":"none";});
+  var target=blocks[Math.max(0,Math.min(s.seq,blocks.length-1))];
+  if(target&&s.seq>=0){var ch=$("chain");ch.scrollLeft=Math.max(0,target.offsetLeft-ch.offsetLeft-ch.clientWidth+target.offsetWidth+12);}
+  $("ledgerNote").textContent=s.verify?("Verified: "+D.verify.entries+" entries, every hash and link matches."):(s.seq>=0?(s.seq+1)+" entries so far. Each entry stores the hash of the entry before it.":"Empty. Each entry will store the hash of the entry before it.");
+
+  /* side by side */
+  $("cSide").classList.toggle("hidden",!s.side);
+}
+$("malSummary").textContent="Status: "+D.malicious.status+" at the "+D.malicious.stage+" stage. Nothing was stored as a pending version.";
+D.malicious.errors.forEach(function(e){$("malErrors").appendChild(el("li","mono",e));});
+$("tamSummary").textContent="In a copy of the ledger, line "+D.tampered.line+" ("+D.tampered.field+") was changed from '"+D.tampered.from+"' to '"+D.tampered.to+"'. Verify result: "+(D.tampered.verify.valid?"valid":"invalid")+", reason: "+D.tampered.verify.reason+". A runtime opened on that copy refuses to write.";
+
+/* ---------- playback ---------- */
+var cur=0,timer=null;
+function go(n){cur=Math.max(0,Math.min(STEPS.length-1,n));render(cur);}
+function delay(){return +$("speed").value;}
+function tick(){if(cur>=STEPS.length-1){stop();return;}go(cur+1);timer=setTimeout(tick,delay());}
+function play(){if(timer)return;if(cur>=STEPS.length-1)go(0);$("play").textContent="Pause";$("play").setAttribute("aria-pressed","true");timer=setTimeout(tick,reduce?Math.max(delay(),4200):900);}
+function stop(){if(timer){clearTimeout(timer);timer=null;}$("play").textContent="Play";$("play").setAttribute("aria-pressed","false");}
+$("play").addEventListener("click",function(){timer?stop():play();});
+$("prev").addEventListener("click",function(){stop();go(cur-1);});
+$("next").addEventListener("click",function(){stop();go(cur+1);});
+$("restart").addEventListener("click",function(){stop();go(0);});
+document.addEventListener("keydown",function(e){
+  var t=e.target&&e.target.tagName;if(t==="SELECT"||t==="INPUT"||t==="TEXTAREA")return;
+  if(e.key===" "||e.key==="k"){if(t==="BUTTON"&&e.key===" ")return;e.preventDefault();timer?stop():play();}
+  else if(e.key==="ArrowRight"){e.preventDefault();stop();go(cur+1);}
+  else if(e.key==="ArrowLeft"){e.preventDefault();stop();go(cur-1);}
+  else if(e.key==="Home"){e.preventDefault();stop();go(0);}
+  else if(e.key==="End"){e.preventDefault();stop();go(STEPS.length-1);}
+});
+var m=/[#&]step=(\d+)/.exec(location.hash);go(m?(+m[1]-1):0);
+if(!reduce&&!m)play();
+})();
+</script>
+</body>
+</html>
