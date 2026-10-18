@@ -27,6 +27,15 @@ def test_fabric_levels():
     assert fabric.evaluate(float("nan"), 0.8, 0, 1.0)["halt"]
 
 
+def test_fabric_detail_matches_summary():
+    d = fabric.evaluate(0.7, 0.7, 0, 0, detail=True)
+    assert len(d["membrane_counts"]) == 1920 and len(d["supervisor_trips"]) == 480 and len(d["sector_trips"]) == 120
+    assert sum(d["membrane_counts"]) == d["tripped_channels"]
+    assert sum(d["sector_trips"]) == d["tripped_sectors"]
+    plain = fabric.evaluate(0.7, 0.7, 0, 0)
+    assert {k: d[k] for k in plain} == plain
+
+
 def run_cli(state, *args):
     return main(["--state", str(state), *args])
 

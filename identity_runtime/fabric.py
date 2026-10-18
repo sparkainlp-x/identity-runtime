@@ -65,12 +65,17 @@ def _clamp(x: float) -> float:
     return min(1.0, max(0.0, float(x)))
 
 
-def evaluate(risk: float, capability_risk: float, context_mismatch: float, lease_utilisation: float) -> dict:
-    """Run every channel and return the latch counts and the root decision."""
+def evaluate(risk: float, capability_risk: float, context_mismatch: float, lease_utilisation: float, detail: bool = False) -> dict:
+    """Run every channel and return the latch counts and the root decision.
+
+    With detail=True the result also lists the tripped-channel count of every
+    membrane and the trip state of every supervisor and sector (for display).
+    """
     s = (_clamp(risk), _clamp(capability_risk), _clamp(context_mismatch), _clamp(lease_utilisation))
     channels = _channels()
     tripped_channels = 0
     membrane_trips: list[bool] = []
+    membrane_counts: list[int] = []
     for m in range(MEMBRANES):
         count = 0
         base = m * CHANNELS_PER_MEMBRANE
@@ -78,6 +83,7 @@ def evaluate(risk: float, capability_risk: float, context_mismatch: float, lease
             if w0 * s[0] + w1 * s[1] + w2 * s[2] + w3 * s[3] > t:
                 count += 1
         tripped_channels += count
+        membrane_counts.append(count)
         membrane_trips.append(count >= MEMBRANE_QUORUM)
     supervisor_trips = [
         sum(membrane_trips[i : i + MEMBRANES_PER_SUPERVISOR]) >= SUPERVISOR_QUORUM
@@ -88,7 +94,7 @@ def evaluate(risk: float, capability_risk: float, context_mismatch: float, lease
         for i in range(0, SUPERVISORS, SUPERVISORS_PER_SECTOR)
     ]
     sectors = sum(sector_trips)
-    return {
+    result = {
         "fabric": FABRIC_VERSION,
         "signals": dict(zip(SIGNALS, s)),
         "tripped_channels": tripped_channels,
@@ -98,3 +104,8 @@ def evaluate(risk: float, capability_risk: float, context_mismatch: float, lease
         "checkpoint": sectors >= 1,
         "halt": sectors == SECTORS and tripped_channels >= HALT_CHANNEL_FRACTION * TOTAL_CHANNELS,
     }
+    if detail:
+        result["membrane_counts"] = membrane_counts
+        result["supervisor_trips"] = supervisor_trips
+        result["sector_trips"] = sector_trips
+    return result

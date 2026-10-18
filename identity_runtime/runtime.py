@@ -396,7 +396,7 @@ class IdentityRuntime:
         effective = max(declared, cap["base_risk"])
         utilisation = (lease["used"] + lease["reserved"]) / lease["max_actions"]
         fab = fabric.evaluate(effective, cap["base_risk"], 0.0, utilisation)
-        fab_summary = {k: fab[k] for k in ("fabric", "tripped_channels", "tripped_membranes", "tripped_supervisors", "tripped_sectors", "checkpoint", "halt")}
+        fab_summary = {k: fab[k] for k in ("fabric", "signals", "tripped_channels", "tripped_membranes", "tripped_supervisors", "tripped_sectors", "checkpoint", "halt")}
 
         if fab["halt"]:
             av["halted"] = True
