@@ -1,0 +1,8 @@
+identity-runtime
+Copyright (C) 2026 Jean-François Brisson / Spark AI NLP
+Licensed under the GNU Affero General Public License v3.0 only (AGPL-3.0-only); see LICENSE.
+
+Research prototype. Classical, deterministic, standard-library-only Python.
+The example personality "Inventor's Notebook guide" is a fictional educational
+character inspired by the historical inventor Nikola Tesla (1856-1943). It is
+not Nikola Tesla and is not affiliated with or endorsed by Tesla, Inc.

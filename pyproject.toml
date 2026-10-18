@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "identity-runtime"
+version = "0.1.0"
+description = "Research prototype: governed, reversible avatar personalities with leased capabilities and a hash-chained audit ledger (stdlib-only Python)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "COMMERCIAL-LICENSE.md"]
+authors = [{ name = "Jean-François Brisson", email = "281253927+sparkainlp-x@users.noreply.github.com" }]
+keywords = ["avatar governance", "capability leases", "audit ledger", "human-in-the-loop", "research software"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/sparkainlp-x/identity-runtime"
+Issues = "https://github.com/sparkainlp-x/identity-runtime/issues"
+
+[project.scripts]
+identity-runtime = "identity_runtime.cli:main"
+
+[tool.setuptools]
+packages = ["identity_runtime"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "-ra"
+filterwarnings = ["error"]
