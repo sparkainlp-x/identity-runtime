@@ -335,35 +335,67 @@ function wordToVisemes(word){
 var STOP={"a":1,"an":1,"the":1,"is":1,"are":1,"was":1,"were":1,"did":1,"do":1,"does":1,"of":1,"to":1,"in":1,"on":1,"and":1,"or":1,"it":1,"its":1,"he":1,"his":1,"him":1,"tesla":1,"nikola":1,"tesla's":1,"what":1,"who":1,"how":1,"why":1,"when":1,"where":1,"which":1,"me":1,"tell":1,"about":1,"you":1,"your":1,"can":1,"i":1,"for":1,"with":1,"that":1,"this":1,"be":1,"have":1,"has":1,"had":1,"there":1,"any":1,"please":1,"really":1,"true":1,"mr":1};
 function norm(s){return (" "+String(s).toLowerCase().replace(/[\u2019']/g,"").replace(/(\d),(\d)/g,"$1$2").replace(/[^a-z0-9]+/g," ")+" ").replace(/\s+/g," ");}
 function stem(w){if(w.length>5&&/ing$/.test(w))return w.slice(0,-3);if(w.length>4&&/ed$/.test(w))return w.slice(0,-2);if(w.length>3&&/s$/.test(w)&&!/ss$/.test(w))return w.slice(0,-1);return w;}
-function toks(s){return norm(s).trim().split(" ").filter(function(w){return w&&!STOP[w];}).map(stem);}
+/* Shorthand expanded before matching, in questions and in keywords alike, so "ac motor" and "alternating current motor" meet. Keep this list short and unambiguous. */
+var SYNONYMS={"ac":"alternating current","dc":"direct current","wardenclyffe":"tower laboratory","bulb":"lamp","lab":"laboratory"};
+var SYN_RE=new RegExp("\\b("+Object.keys(SYNONYMS).join("|")+")s?\\b","gi");
+/* oneWord: expand only the synonyms that are a single word ("lab" to "laboratory"), not the ones that become a phrase */
+function expandSynonyms(s,oneWord){return String(s).replace(SYN_RE,function(m,w){var x=SYNONYMS[w.toLowerCase()];return oneWord&&x.indexOf(" ")>=0?m:x;});}
+function rawToks(s){return norm(s).trim().split(" ").filter(function(w){return w&&!STOP[w];}).map(stem);}
+function toks(s){return rawToks(expandSynonyms(s));}
 function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var p=[],i,j;for(j=0;j<=b.length;j++)p[j]=j;for(i=1;i<=a.length;i++){var c=[i];for(j=1;j<=b.length;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[b.length];}
+/* Keywords are compared after expansion; keywords that expand to the same text are merged. Each merged keyword keeps its
+   original forms: a phrase weighs 2 plus its word count when the question uses that form literally, so "ac vs dc" still
+   outweighs "ac" plus "dc", while a one-word keyword turned into a phrase ("wardenclyffe") weighs 2, like any one word. */
 var E=D.entries.map(function(e){
-  return {e:e,kw:e.keywords.map(function(k){var n=norm(k);return {n:n,multi:n.trim().indexOf(" ")>0,t:toks(k)};}),qt:toks(e.q)};
+  var byN={},kw=[];
+  e.keywords.forEach(function(k){
+    var n=norm(expandSynonyms(k)),raw=norm(k),rt=rawToks(k),one=raw.trim().indexOf(" ")<0;
+    var f={raw:raw,rt:rt,w:one?2:2+rt.length};
+    if(byN[n]){byN[n].forms.push(f);return;}
+    var r={n:n,multi:n.trim().indexOf(" ")>0,t:toks(k),forms:[f],orig:one&&n!==raw&&rt.length?rt[0]:null};
+    byN[n]=r;kw.push(r);
+  });
+  return {e:e,kw:kw,qt:toks(e.q)};
 });
 /* Score every entry: s is the total, k the part that came from keywords (exact or fuzzy), not from words of the question text. */
 function score(query){
-  var nq=norm(query),qt=toks(query),set={};qt.forEach(function(t){set[t]=1;});
+  var nq=norm(expandSynonyms(query));
+  if(!nq.trim())return []; /* blank or punctuation only: nothing to score */
+  /* set[t] is what a one-word keyword earns: 2 for a word the question used (or a one-word synonym of it), 1.5 for a word
+     that only came from a phrase expansion, so "wardenclyffe" pulls the Wardenclyffe note harder than any note on "laboratory" */
+  var rn=norm(query),qt=toks(query),rq=rawToks(query),set={};
+  qt.forEach(function(t){set[t]=1.5;});rawToks(expandSynonyms(query,true)).concat(rq).forEach(function(t){if(set[t])set[t]=2;});
+  function fuzzy(t,words,fz){for(var i=0;i<words.length;i++){var w=words[i];if(w.length>=5&&!fz[w]&&lev(w,t)<=(t.length>=8?2:1)){fz[w]=1;return true;}}return false;}
   return E.map(function(x){
-    var s=0,hit={},fz={};
+    var s=0,hit={},qhit={},fz={};
     x.kw.forEach(function(k){
-      if(k.multi){if(nq.indexOf(k.n)>=0){s+=2+k.t.length;k.t.forEach(function(t){hit[t]=1;});}}
+      if(k.multi){
+        if(nq.indexOf(k.n)>=0){
+          var f=null;
+          k.forms.forEach(function(g){if(rn.indexOf(g.raw)>=0&&(!f||g.w>f.w))f=g;});
+          if(!f)f=k.forms[0];
+          if(!hit[f.raw]){s+=f.w;hit[f.raw]=1;f.rt.forEach(function(t){hit[t]=1;});}
+          k.t.forEach(function(t){qhit[t]=1;});
+        }
+        else if(k.orig&&k.orig.length>=5&&!hit[k.orig]&&fuzzy(k.orig,rq,fz)){s+=1.5;hit[k.orig]=1;}
+      }
       else if(k.t.length){var t=k.t[0];
-        if(set[t]){if(!hit[t]){s+=2;hit[t]=1;}}
-        else if(t.length>=5&&!hit[t]){for(var i=0;i<qt.length;i++){var w=qt[i];if(w.length>=5&&!fz[w]&&lev(w,t)<=(t.length>=8?2:1)){s+=1.5;hit[t]=1;fz[w]=1;break;}}}
+        if(set[t]){if(!hit[t]){s+=set[t];hit[t]=1;qhit[t]=1;}}
+        else if(t.length>=5&&!hit[t]&&fuzzy(t,qt,fz)){s+=1.5;hit[t]=1;qhit[t]=1;}
       }
     });
     var k=s;
-    x.qt.forEach(function(t){if(set[t]&&!hit[t]){s+=0.6;hit[t]=1;}});
+    x.qt.forEach(function(t){if(set[t]===2&&!hit[t]&&!qhit[t]){s+=0.6;hit[t]=1;}});
     return {x:x,s:s,k:k};
   }).sort(function(a,b){return b.s-a.s;});
 }
 var THRESH=2;
 /* Words that show a question is about the guide's subject even when no note matches it. */
 var TOPIC={"tesla":1,"nikola":1,"he":1,"his":1,"him":1,"inventor":1,"science":1,"scientist":1,"physics":1,"engineer":1,"engineering":1,"history":1,"experiment":1,"electrical":1,"electron":1,"electrons":1};
-var VOCAB={};E.forEach(function(x){x.kw.forEach(function(k){if(!k.multi)k.t.forEach(function(t){VOCAB[t]=1;});});});
+var VOCAB={};E.forEach(function(x){x.kw.forEach(function(k){if(!k.multi||k.orig){k.t.forEach(function(t){VOCAB[t]=1;});if(k.orig)VOCAB[k.orig]=1;}});});
 function topical(query,best){
   if(best&&best.k>0)return true;
-  var raw=norm(query).trim().split(" ");
+  var raw=norm(query+" "+expandSynonyms(query)).trim().split(" ");
   for(var i=0;i<raw.length;i++){if(TOPIC[raw[i]]||VOCAB[stem(raw[i])])return true;}
   return false;
 }

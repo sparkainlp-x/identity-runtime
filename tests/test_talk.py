@@ -376,3 +376,62 @@ def test_matching_never_dead_ends_on_topical_questions(site):
     assert got["electrisity"]["kind"] == "closest" and got["electrisity"]["id"] == "what_is_electricity"
     assert got["electrisity"]["text"].startswith("Here is the closest note I have:")
     assert got["tesla"]["kind"] == "overview" and got["tesla"]["id"] == "who_was_tesla" and len(got["tesla"]["more"]) == 3
+
+
+def _pick_in_node(site, queries, extra=""):
+    """Run the page's matching block in node and return pick() for each query (plus anything extra prints)."""
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    data = page.split('<script id="talk" type="application/json">')[1].split("</script>")[0]
+    code = page.split("/* ---- matching ---- */")[1].split("/* ---- end matching ---- */")[0]
+    script = (
+        "const D=" + data + ";" + code +
+        "const out={picks:" + json.dumps(queries) + ".map(function(q){var p=pick(q);"
+        "return {kind:p.kind,id:p.entry&&p.entry.id,text:p.text,html:p.highlightedText,more:p.more.map(function(e){return e.id;})};})};"
+        + extra + "console.log(JSON.stringify(out));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True).stdout)
+    out["picks"] = dict(zip(queries, out["picks"]))
+    return out
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_synonyms_expand_in_questions_and_keywords(site):
+    queries = ["ac motor", "what is DC?", "what is AC?", "AC/DC", "ac vs dc", "alternating current", "alternating current motor",
+               "wardenclyffe", "wardenclyffe tower", "What was Wardenclyffe Tower?", "Wardenclyffe today", "wardencliff",
+               "tell me about his lab", "lab fire", "laboratory fire", "light bulb", "bulbs", "edison dc", "dc motor",
+               "tell me about electricity", "", "   ", "?!", "the", "what is the weather", "back in the day"]
+    out = _pick_in_node(site, queries, "out.exp=['AC motor','ac/dc','Labs','bulb','back','lacquer','Wardenclyffe'].map(function(q){return expandSynonyms(q);});")
+    got = out["picks"]
+    expected = {
+        "ac motor": "induction_motor", "alternating current motor": "induction_motor",
+        "what is DC?": "ac_vs_dc", "what is AC?": "ac_vs_dc", "AC/DC": "ac_vs_dc", "alternating current": "ac_vs_dc",
+        "ac vs dc": "war_of_currents",  # the literal phrase still outweighs "ac" plus "dc"
+        "wardenclyffe": "wardenclyffe", "wardenclyffe tower": "wardenclyffe", "What was Wardenclyffe Tower?": "wardenclyffe",
+        "Wardenclyffe today": "museum", "lab fire": "lab_fire", "laboratory fire": "lab_fire",
+        "light bulb": "wireless_lighting", "bulbs": "wireless_lighting", "edison dc": "edison_rivalry", "dc motor": "how_motor_works",
+        "tell me about electricity": "what_is_electricity",
+        "tell me about his lab": "colorado",  # the Colorado Springs laboratory note; before synonyms this fell back to the overview
+    }
+    for q, want in expected.items():
+        assert got[q]["kind"] == "answer" and got[q]["id"] == want, (q, got[q])
+    assert got["wardencliff"]["kind"] == "closest" and got["wardencliff"]["id"] == "wardenclyffe"  # typo matching survives expansion
+    for q in ["", "   ", "?!", "the", "what is the weather", "back in the day"]:
+        assert got[q]["kind"] == "offtopic" and got[q]["id"] is None, (q, got[q])
+    assert out["exp"] == ["alternating current motor", "alternating current/direct current", "laboratory", "lamp", "back", "lacquer", "tower laboratory"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_every_keyword_still_reaches_its_note(site):
+    # each keyword asked on its own must still lead to its note (as the answer, or tied at the top score)
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    data = page.split('<script id="talk" type="application/json">')[1].split("</script>")[0]
+    code = page.split("/* ---- matching ---- */")[1].split("/* ---- end matching ---- */")[0]
+    script = (
+        "const D=" + data + ";" + code +
+        "var bad=[];D.entries.forEach(function(e){e.keywords.forEach(function(k){var r=score(k);"
+        "var me=r.filter(function(z){return z.x.e.id===e.id;})[0];if(!me||me.s<r[0].s||me.s<1.5)bad.push([e.id,k,me&&me.s,r[0]&&r[0].x.e.id]);});});"
+        "console.log(JSON.stringify(bad));"
+    )
+    bad = json.loads(subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True).stdout)
+    # "motor" alone goes to the general how-motors-work note; that was already so before synonyms were added
+    assert [b[:2] for b in bad] == [["induction_motor", "motor"]], bad
