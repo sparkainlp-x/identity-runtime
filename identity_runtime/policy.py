@@ -95,7 +95,7 @@ def _merge_unique(mandatory: tuple[str, ...], declared: list[str]) -> list[str]:
 
 
 def compile_policy(manifest: dict[str, Any]) -> dict[str, Any]:
-    """Compile a validated manifest into an effective, clamped runtime policy.
+    """Compile a schema-checked manifest into an effective, clamped runtime policy.
 
     Returns {"capabilities": {...}, "safety": {...}, "notes": [...], "policy_hash": ...}.
     Raises PolicyError for unknown or never-grantable capabilities.

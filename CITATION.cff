@@ -14,7 +14,7 @@ authors:
 abstract: >-
   A standard-library Python research prototype that treats an avatar
   personality as a versioned identity state rather than a file. Uploaded
-  manifests are validated, compiled against a runtime-side capability
+  manifests are checked against a schema, compiled against a runtime-side capability
   registry and screened by a deterministic shadow simulation, then wait for
   human approval (two distinct approvers for tool and safety policy) before
   they commit. Capabilities are short, revocable leases granted by a person;

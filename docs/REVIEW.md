@@ -16,4 +16,4 @@ The first draft (the "OES-61440 Autonomous Identity Runtime" script shared in co
 | 10 | Code execution was an `exec()` placeholder. | Removed. `execute_code` is never grantable. The runtime authorises and records; it executes nothing. |
 | 11 | Approvals were unsigned. | Optional HMAC-SHA256 approval tokens bound to avatar, manifest checksum or action id, module or capability, and approver. |
 
-Wording was also changed: the draft's "revolutionary" framing and "what the demo proves" list are replaced by a plain description and a limitations section.
+Wording was also changed: the draft's promotional framing and its list of what the demo shows are replaced by a plain description and a limitations section.
