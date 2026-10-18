@@ -10,7 +10,7 @@ It explores a runtime enforcement layer for identity, authorization, reversibili
 
 - Author: Jean-François Brisson ([ORCID 0009-0000-9778-5374](https://orcid.org/0009-0000-9778-5374)), Spark AI NLP
 - License: AGPL-3.0-only (commercial terms are not finalised; see [Licence](#licence))
-- DOI: [10.5281/zenodo.23448946](https://doi.org/10.5281/zenodo.23448946) (concept DOI, all versions); v0.1.0: [10.5281/zenodo.23448947](https://doi.org/10.5281/zenodo.23448947)
+- DOI: [10.5281/zenodo.23448946](https://doi.org/10.5281/zenodo.23448946) (concept DOI, all versions); v0.2.0: [10.5281/zenodo.23453941](https://doi.org/10.5281/zenodo.23453941); v0.1.0: [10.5281/zenodo.23448947](https://doi.org/10.5281/zenodo.23448947)
 - Design documents: [THREAT-MODEL.md](THREAT-MODEL.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [benchmarks/results.md](benchmarks/results.md), [docs/REVIEW.md](docs/REVIEW.md)
 
 ## Five-minute quickstart
@@ -215,4 +215,4 @@ The public research implementation is AGPL-3.0-only; see [LICENSE](LICENSE). Com
 
 ## Citation
 
-See [CITATION.cff](CITATION.cff). Cite the concept DOI [10.5281/zenodo.23448946](https://doi.org/10.5281/zenodo.23448946) for all versions, or the version DOI [10.5281/zenodo.23448947](https://doi.org/10.5281/zenodo.23448947) for v0.1.0.
+See [CITATION.cff](CITATION.cff). Cite the concept DOI [10.5281/zenodo.23448946](https://doi.org/10.5281/zenodo.23448946) for all versions, or a version DOI: [10.5281/zenodo.23453941](https://doi.org/10.5281/zenodo.23453941) for v0.2.0, [10.5281/zenodo.23448947](https://doi.org/10.5281/zenodo.23448947) for v0.1.0.

@@ -10,6 +10,9 @@ identifiers:
     value: "10.5281/zenodo.23448946"
     description: "Concept DOI (all versions)"
   - type: doi
+    value: "10.5281/zenodo.23453941"
+    description: "Version DOI for v0.2.0"
+  - type: doi
     value: "10.5281/zenodo.23448947"
     description: "Version DOI for v0.1.0"
 license: AGPL-3.0-only
