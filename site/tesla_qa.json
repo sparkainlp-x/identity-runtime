@@ -1,0 +1,1147 @@
+{
+  "schema": "identity-runtime/talk-qa-v1",
+  "character": "tesla-edu-guide",
+  "note": "Scripted answers for a fictional educational character inspired by Nikola Tesla (1856-1943). Written by hand from the cited sources. Not Nikola Tesla, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc.",
+  "entries": [
+    {
+      "id": "who_are_you",
+      "topic": "about",
+      "myth": false,
+      "q": "Who are you? Are you Nikola Tesla?",
+      "keywords": [
+        "who are you",
+        "are you tesla",
+        "are you nikola",
+        "your name",
+        "introduce",
+        "real tesla",
+        "are you real",
+        "yourself"
+      ],
+      "a": "I am the Inventor's Notebook guide, a fictional educational character inspired by Nikola Tesla. I am not Tesla himself, and I do not speak for him. Every answer on this page was written in advance from published sources, and each one names its source so you can check it.",
+      "source": {
+        "title": "personalities/tesla.json (identity module)",
+        "url": "https://github.com/sparkainlp-x/identity-runtime/blob/main/personalities/tesla.json"
+      }
+    },
+    {
+      "id": "are_you_ai",
+      "topic": "about",
+      "myth": false,
+      "q": "Are you an AI chatbot?",
+      "keywords": [
+        "ai",
+        "chatbot",
+        "chat gpt",
+        "artificial intelligence",
+        "language model",
+        "robot",
+        "computer program",
+        "how do you work"
+      ],
+      "a": "No. I am not an AI chatbot and nothing here is generated on the fly. This page holds a fixed list of questions and answers. Your words are matched against that list in your own browser, and if nothing fits I say so. Nothing you type or say leaves your device, apart from whatever your browser's own speech recognition does.",
+      "source": {
+        "title": "identity-runtime README",
+        "url": "https://github.com/sparkainlp-x/identity-runtime#readme"
+      }
+    },
+    {
+      "id": "tesla_inc",
+      "topic": "about",
+      "myth": false,
+      "q": "Are you connected to Tesla, Inc. or Elon Musk?",
+      "keywords": [
+        "tesla inc",
+        "tesla motors",
+        "elon",
+        "musk",
+        "car company",
+        "electric car",
+        "cybertruck",
+        "model 3",
+        "affiliated"
+      ],
+      "a": "No. This page and this character have no connection with Tesla, Inc. and are not endorsed by it. The car company was founded in 2003 and named in honour of the inventor, who had died sixty years earlier. He had nothing to do with it.",
+      "source": {
+        "title": "Wikipedia: Tesla, Inc.",
+        "url": "https://en.wikipedia.org/wiki/Tesla,_Inc."
+      }
+    },
+    {
+      "id": "capabilities",
+      "topic": "about",
+      "myth": false,
+      "q": "Can you send an email or buy something for me?",
+      "keywords": [
+        "send email",
+        "email",
+        "buy",
+        "purchase",
+        "spend money",
+        "pay",
+        "order",
+        "book",
+        "send a message",
+        "post",
+        "what can you do",
+        "your abilities"
+      ],
+      "a": "No. On this page I can only answer from my scripted notes. Sending email needs a lease that a person grants and a human approval for each message, and spending money is not part of my personality at all. Neither is available here. This requires human approval.",
+      "source": {
+        "title": "identity-runtime: capability leases",
+        "url": "https://github.com/sparkainlp-x/identity-runtime#readme"
+      }
+    },
+    {
+      "id": "born",
+      "topic": "life",
+      "myth": false,
+      "q": "When and where was Tesla born?",
+      "keywords": [
+        "born",
+        "birth",
+        "birthday",
+        "smiljan",
+        "where was he from",
+        "childhood",
+        "croatia",
+        "1856",
+        "hometown"
+      ],
+      "a": "Nikola Tesla was born on 10 July 1856 in the village of Smiljan, then in the Military Frontier of the Austrian Empire and now in Croatia. His family were ethnic Serbs; his father Milutin was an Eastern Orthodox priest. He was the fourth of five children.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Childhood",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Childhood"
+      }
+    },
+    {
+      "id": "nationality",
+      "topic": "life",
+      "myth": false,
+      "q": "Was Tesla Serbian, Croatian or American?",
+      "keywords": [
+        "serbian",
+        "serb",
+        "croatian",
+        "nationality",
+        "american",
+        "citizen",
+        "citizenship",
+        "ethnicity",
+        "austrian"
+      ],
+      "a": "He was an ethnic Serb, born in what is now Croatia when it was part of the Austrian Empire. He moved to the United States in 1884 and became a naturalised American citizen on 30 July 1891. Both Serbia and Croatia honour him today.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Early years",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Early_years"
+      }
+    },
+    {
+      "id": "education",
+      "topic": "life",
+      "myth": false,
+      "q": "Where did Tesla study? Did he graduate?",
+      "keywords": [
+        "study",
+        "school",
+        "university",
+        "graz",
+        "degree",
+        "graduate",
+        "college",
+        "education",
+        "prague",
+        "student"
+      ],
+      "a": "He enrolled at the Imperial-Royal Technical College in Graz in 1875 and did very well in his first year, but by his third year he was failing and he left in December 1878 without graduating. In 1880 he went to Prague but arrived too late to enrol, and attended lectures there instead. He never received a degree.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Youth",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Youth"
+      }
+    },
+    {
+      "id": "early_jobs",
+      "topic": "life",
+      "myth": false,
+      "q": "What did Tesla do before coming to America?",
+      "keywords": [
+        "budapest",
+        "paris",
+        "telephone",
+        "continental edison",
+        "first job",
+        "before america",
+        "europe",
+        "puskas"
+      ],
+      "a": "In 1881 he went to Budapest to work at the new telephone exchange under Tivadar Puskas, where he became chief electrician. In 1882 Puskas found him a job in Paris with the Continental Edison Company, installing electric lighting, which gave him a great deal of practical experience.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Working at Edison",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Working_at_Edison"
+      }
+    },
+    {
+      "id": "arrival_us",
+      "topic": "life",
+      "myth": false,
+      "q": "When did Tesla come to the United States?",
+      "keywords": [
+        "came to america",
+        "emigrate",
+        "immigrant",
+        "new york",
+        "arrive",
+        "1884",
+        "united states",
+        "moved to america"
+      ],
+      "a": "He emigrated in June 1884 and started almost at once at the Edison Machine Works on Manhattan's Lower East Side. He stayed about six months before leaving to strike out on his own.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Moving to the United States",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Moving_to_the_United_States"
+      }
+    },
+    {
+      "id": "edison_bonus",
+      "topic": "edison",
+      "myth": true,
+      "q": "Did Edison cheat Tesla out of $50,000?",
+      "keywords": [
+        "50000",
+        "50,000",
+        "bonus",
+        "cheat",
+        "joke",
+        "american humor",
+        "promise",
+        "edison owe"
+      ],
+      "a": "That story comes mainly from Tesla's own later account. He wrote that the manager of the Edison Machine Works offered him a $50,000 bonus to redesign the company's machines and that it turned out to be a joke. Later retellings put the words in Thomas Edison's mouth. Historians treat the details as uncertain, because the main source is Tesla himself, written decades afterwards.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Working at Edison",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Working_at_Edison"
+      }
+    },
+    {
+      "id": "edison_rivalry",
+      "topic": "edison",
+      "myth": false,
+      "q": "Were Tesla and Edison rivals?",
+      "keywords": [
+        "edison",
+        "rival",
+        "rivalry",
+        "enemy",
+        "feud",
+        "hate",
+        "thomas edison",
+        "tesla vs edison",
+        "versus"
+      ],
+      "a": "They worked together only briefly, in 1884, and they disagreed about many things. The famous commercial fight over alternating and direct current was mostly between the Edison and Westinghouse companies, not a personal duel. Popular culture has made the personal rivalry much bigger than the documents show. In fact Tesla later accepted the Edison Medal of the American Institute of Electrical Engineers.",
+      "source": {
+        "title": "Wikipedia: War of the currents",
+        "url": "https://en.wikipedia.org/wiki/War_of_the_currents"
+      }
+    },
+    {
+      "id": "war_of_currents",
+      "topic": "ac",
+      "myth": false,
+      "q": "What was the War of the Currents?",
+      "keywords": [
+        "war of the currents",
+        "current war",
+        "ac vs dc",
+        "ac versus dc",
+        "electrocution",
+        "battle",
+        "westinghouse edison",
+        "war of currents",
+        "currents war"
+      ],
+      "a": "In the late 1880s and early 1890s, companies selling direct-current systems, led by Edison's, competed fiercely with companies selling alternating current, led by Westinghouse. It involved price-cutting, patent suits and a public campaign about the dangers of high-voltage AC. Alternating current won for long-distance supply largely because transformers can change its voltage easily.",
+      "source": {
+        "title": "Wikipedia: War of the currents",
+        "url": "https://en.wikipedia.org/wiki/War_of_the_currents"
+      }
+    },
+    {
+      "id": "ac_vs_dc",
+      "topic": "ac",
+      "myth": false,
+      "q": "What is the difference between AC and DC?",
+      "keywords": [
+        "difference",
+        "ac",
+        "dc",
+        "alternating current",
+        "direct current",
+        "what is ac",
+        "what is dc",
+        "explain"
+      ],
+      "a": "Direct current flows steadily in one direction, like the current from a battery. Alternating current reverses direction many times a second. The great practical advantage of AC is the transformer: it can raise the voltage for efficient long-distance transmission and lower it again for safe use in buildings.",
+      "source": {
+        "title": "Wikipedia: Alternating current",
+        "url": "https://en.wikipedia.org/wiki/Alternating_current"
+      }
+    },
+    {
+      "id": "light_company",
+      "topic": "life",
+      "myth": false,
+      "q": "What was Tesla Electric Light and Manufacturing?",
+      "keywords": [
+        "electric light and manufacturing",
+        "rahway",
+        "arc lighting",
+        "first company",
+        "1885",
+        "investors",
+        "penniless",
+        "ditch"
+      ],
+      "a": "After leaving Edison in 1885 he formed Tesla Electric Light and Manufacturing with investors and built an arc-lighting system in Rahway, New Jersey. His first US patents came from this work. The investors then decided to run only a utility, dropped him and kept his patents, and he had to take labouring jobs for a time.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Tesla Electric Light and Manufacturing",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Tesla_Electric_Light_and_Manufacturing"
+      }
+    },
+    {
+      "id": "induction_motor",
+      "topic": "ac",
+      "myth": false,
+      "q": "What is the AC induction motor?",
+      "keywords": [
+        "induction motor",
+        "motor",
+        "rotating magnetic field",
+        "polyphase",
+        "1888",
+        "ac motor",
+        "commutator",
+        "brushes"
+      ],
+      "a": "It is a motor driven by polyphase alternating current. Several currents, out of step with one another, create a magnetic field that rotates, and that field drags the rotor around. It needs no commutator or brushes, so it avoids sparking and much maintenance. My namesake patented his design in May 1888 and demonstrated it to the American Institute of Electrical Engineers on 16 May 1888.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, AC and the induction motor",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#AC_and_the_induction_motor"
+      }
+    },
+    {
+      "id": "how_motor_works",
+      "topic": "ac",
+      "myth": false,
+      "q": "How does an induction motor work?",
+      "keywords": [
+        "how does",
+        "motor work",
+        "rotor",
+        "stator",
+        "induce",
+        "induced current",
+        "spin"
+      ],
+      "a": "Picture coils arranged around a ring, the stator. Feed them alternating currents that peak one after another, and the magnetic field sweeps round the ring. Inside sits the rotor, a cage of conductors. The moving field induces currents in the rotor, and those currents feel a force that makes the rotor chase the field. That is why it is called an induction motor: nothing touches the rotor electrically.",
+      "source": {
+        "title": "Wikipedia: Induction motor",
+        "url": "https://en.wikipedia.org/wiki/Induction_motor"
+      }
+    },
+    {
+      "id": "ferraris",
+      "topic": "ac",
+      "myth": false,
+      "q": "Did anyone else invent the same kind of motor?",
+      "keywords": [
+        "ferraris",
+        "galileo",
+        "only inventor",
+        "first",
+        "independent",
+        "who else",
+        "invented first",
+        "anyone else",
+        "someone else",
+        "only one",
+        "same kind"
+      ],
+      "a": "No. The Italian physicist Galileo Ferraris developed a similar commutator-free motor based on a rotating magnetic field in 1885 and published it in March 1888. Westinghouse looked at both and judged that Tesla's patents would probably control the market. Many engineers, including Westinghouse's own, turned these ideas into practical machines.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, AC and the induction motor",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#AC_and_the_induction_motor"
+      }
+    },
+    {
+      "id": "westinghouse",
+      "topic": "westinghouse",
+      "myth": false,
+      "q": "What was Tesla's deal with George Westinghouse?",
+      "keywords": [
+        "westinghouse",
+        "george westinghouse",
+        "license",
+        "licensing",
+        "deal",
+        "contract",
+        "pittsburgh",
+        "60,000"
+      ],
+      "a": "In July 1888 Tesla's partners Brown and Peck licensed his polyphase motor and transformer patents to George Westinghouse for $60,000 in cash and stock plus a royalty of $2.50 per AC horsepower. Westinghouse also hired Tesla for a year as a consultant in Pittsburgh.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, AC and the induction motor",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#AC_and_the_induction_motor"
+      }
+    },
+    {
+      "id": "royalties",
+      "topic": "westinghouse",
+      "myth": true,
+      "q": "Did Tesla tear up his royalty contract?",
+      "keywords": [
+        "tear up",
+        "tore up",
+        "royalty",
+        "royalties",
+        "gave up",
+        "millions",
+        "rich",
+        "lump sum",
+        "216,000"
+      ],
+      "a": "The dramatic scene of tearing up the contract is a popular legend. What the sources describe is less theatrical: when Westinghouse was in financial difficulty in the early 1890s, Tesla agreed to release the company from the royalty clause. Six years later Westinghouse bought the patent outright for a lump sum of $216,000.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Market turmoil",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Market_turmoil"
+      }
+    },
+    {
+      "id": "tesla_coil",
+      "topic": "inventions",
+      "myth": false,
+      "q": "What is a Tesla coil?",
+      "keywords": [
+        "tesla coil",
+        "coil",
+        "resonant transformer",
+        "oscillating transformer",
+        "high voltage",
+        "sparks",
+        "1891",
+        "high frequency"
+      ],
+      "a": "It is a resonant transformer that produces very high voltage, low current, high-frequency alternating current. He developed it around 1889 to 1891, after trying to repeat Heinrich Hertz's radio-wave experiments, and patented it in 1891. He used it in his lighting and wireless experiments. Today it is mostly used for teaching and for spectacular displays of sparks.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Tesla coil",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Tesla_coil"
+      }
+    },
+    {
+      "id": "build_coil",
+      "topic": "safety",
+      "myth": false,
+      "q": "How do I build a Tesla coil at home?",
+      "keywords": [
+        "build",
+        "make",
+        "diy",
+        "at home",
+        "homemade",
+        "instructions",
+        "experiment",
+        "high voltage",
+        "dangerous"
+      ],
+      "a": "I will not give building instructions. Tesla coils and their power supplies work at voltages that can kill, and they need training and proper safety equipment. If you want to explore, ask a science teacher or a museum about a supervised demonstration, or try safe classroom experiments with low-voltage batteries, such as building a simple electromagnet. This requires human approval.",
+      "source": {
+        "title": "personalities/tesla.json (safety policy)",
+        "url": "https://github.com/sparkainlp-x/identity-runtime/blob/main/personalities/tesla.json"
+      }
+    },
+    {
+      "id": "wireless_lighting",
+      "topic": "wireless",
+      "myth": false,
+      "q": "Did Tesla light lamps without wires?",
+      "keywords": [
+        "wireless lighting",
+        "light without wires",
+        "geissler",
+        "lamp",
+        "bulb",
+        "glow",
+        "lecture",
+        "demonstration",
+        "without wires",
+        "lamps",
+        "lights"
+      ],
+      "a": "Yes, at short range. In public lectures in the 1890s he used high-frequency fields from his coils to light gas-filled Geissler tubes and even incandescent bulbs across a stage, through near-field coupling. None of his ventures turned it into a commercial lighting product.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Wireless lighting",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Wireless_lighting"
+      }
+    },
+    {
+      "id": "columbian_expo",
+      "topic": "westinghouse",
+      "myth": false,
+      "q": "What happened at the 1893 Chicago World's Fair?",
+      "keywords": [
+        "world's fair",
+        "worlds fair",
+        "chicago",
+        "1893",
+        "columbian",
+        "exposition",
+        "exhibition"
+      ],
+      "a": "Westinghouse Electric won the bid to light the 1893 World's Columbian Exposition in Chicago with alternating current, a very public showcase for AC. Tesla exhibited there and spoke at the International Electrical Congress, where he also introduced a steam-powered oscillating generator.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Polyphase system and the Columbian Exposition",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Polyphase_system_and_the_Columbian_Exposition"
+      }
+    },
+    {
+      "id": "niagara",
+      "topic": "westinghouse",
+      "myth": false,
+      "q": "What was Tesla's role at Niagara Falls?",
+      "keywords": [
+        "niagara",
+        "falls",
+        "hydroelectric",
+        "power plant",
+        "buffalo",
+        "adams",
+        "dam"
+      ],
+      "a": "In 1893 Edward Dean Adams of the Niagara Falls Cataract Construction Company asked his opinion on how to transmit the power. He advised a two-phase AC system. Westinghouse was awarded the contract for the two-phase generators and General Electric for the distribution system. So he was an adviser and his patents were used; he did not build the plant himself.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Consulting on Niagara",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Consulting_on_Niagara"
+      }
+    },
+    {
+      "id": "lab_fire",
+      "topic": "life",
+      "myth": false,
+      "q": "What happened in the 1895 laboratory fire?",
+      "keywords": [
+        "fire",
+        "burned",
+        "lab fire",
+        "1895",
+        "fifth avenue",
+        "destroyed"
+      ],
+      "a": "On 13 March 1895 the building on South Fifth Avenue that housed his laboratory caught fire. His fourth-floor laboratory burned and collapsed into the floor below, setting back his work considerably.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, The Nikola Tesla Company",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#The_Nikola_Tesla_Company"
+      }
+    },
+    {
+      "id": "xrays",
+      "topic": "inventions",
+      "myth": false,
+      "q": "Did Tesla work on X-rays?",
+      "keywords": [
+        "x-ray",
+        "xray",
+        "x ray",
+        "roentgen",
+        "rontgen",
+        "radiation",
+        "shadowgraph",
+        "mark twain",
+        "x rays",
+        "xrays"
+      ],
+      "a": "Yes. After Wilhelm Roentgen announced X-rays in December 1895, Tesla experimented with X-ray imaging in 1896, using single-terminal tubes driven by his coils. One account suggests he may have captured an X-ray effect by accident a few weeks before Roentgen's announcement. He also noted that the work was hazardous to skin. Roentgen is credited with the discovery.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, X-ray experimentation",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#X-ray_experimentation"
+      }
+    },
+    {
+      "id": "radio_boat",
+      "topic": "radio",
+      "myth": false,
+      "q": "What was Tesla's radio-controlled boat?",
+      "keywords": [
+        "boat",
+        "remote control",
+        "radio control",
+        "teleautomaton",
+        "telautomaton",
+        "madison square garden",
+        "1898",
+        "drone",
+        "robot"
+      ],
+      "a": "In 1898, at an electrical exhibition in Madison Square Garden, he demonstrated a small boat steered by radio signals, which he called a telautomaton. It was one of the first wirelessly controlled vehicles. He tried to sell the idea to the US military as a guided torpedo, but they showed little interest.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Radio remote control",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Radio_remote_control"
+      }
+    },
+    {
+      "id": "radio_inventor",
+      "topic": "radio",
+      "myth": true,
+      "q": "Did Tesla invent radio instead of Marconi?",
+      "keywords": [
+        "radio",
+        "marconi",
+        "invented radio",
+        "supreme court",
+        "1943",
+        "patent dispute",
+        "wireless telegraphy"
+      ],
+      "a": "Radio has many contributors, including Hertz, Lodge, Braun, Marconi and Tesla. Tesla held important 1897 patents on tuned circuits. In 1943 the US Supreme Court, in a case brought by the Marconi Company, restored prior patents of Oliver Lodge, John Stone Stone and Tesla, but the court said its decision had no bearing on Marconi's claim to have first achieved radio transmission. So the honest answer is: an important contributor, not the sole inventor.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Wireless lawsuits",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Wireless_lawsuits"
+      }
+    },
+    {
+      "id": "colorado",
+      "topic": "wireless",
+      "myth": false,
+      "q": "What did Tesla do in Colorado Springs?",
+      "keywords": [
+        "colorado",
+        "colorado springs",
+        "1899",
+        "lightning",
+        "artificial lightning",
+        "magnifying transmitter",
+        "laboratory"
+      ],
+      "a": "In 1899 and 1900 he ran a laboratory in Colorado Springs to study high-voltage, high-frequency power and wireless transmission. He operated a large coil in the megavolt range and produced artificial lightning with discharges of up to about 41 metres, and at one point burned out the local power company's generator.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Colorado Springs",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Colorado_Springs"
+      }
+    },
+    {
+      "id": "mars_signals",
+      "topic": "wireless",
+      "myth": true,
+      "q": "Did Tesla receive signals from Mars?",
+      "keywords": [
+        "mars",
+        "aliens",
+        "planets",
+        "extraterrestrial",
+        "signals from space",
+        "talking with planets",
+        "venus"
+      ],
+      "a": "In Colorado Springs he recorded signals he could not explain and suggested they might come from another planet. Newspapers turned it into a story about Mars, and he wrote about it in Collier's Weekly in 1901. There is no evidence that the signals came from another planet; natural or terrestrial radio sources are far more likely.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Colorado Springs",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Colorado_Springs"
+      }
+    },
+    {
+      "id": "wardenclyffe",
+      "topic": "wireless",
+      "myth": false,
+      "q": "What was Wardenclyffe Tower?",
+      "keywords": [
+        "wardenclyffe",
+        "tower",
+        "long island",
+        "shoreham",
+        "morgan",
+        "jp morgan",
+        "j. p. morgan",
+        "1901"
+      ],
+      "a": "Wardenclyffe was the tower and laboratory he began building in 1901 at Shoreham, Long Island, with $150,000 from J. P. Morgan. It was meant first for transatlantic wireless communication, and he hoped later for wireless power. Marconi crossed the Atlantic by radio in December 1901, investors lost confidence, and the project came to a halt in 1905. The tower was demolished in 1917. The site is now the Tesla Science Center at Wardenclyffe.",
+      "source": {
+        "title": "Wikipedia: Wardenclyffe Tower",
+        "url": "https://en.wikipedia.org/wiki/Wardenclyffe_Tower"
+      }
+    },
+    {
+      "id": "myth_wireless_homes",
+      "topic": "myths",
+      "myth": true,
+      "q": "Did Tesla send wireless power to homes?",
+      "keywords": [
+        "wireless power",
+        "power to homes",
+        "wireless electricity",
+        "free electricity",
+        "power the world",
+        "transmit power",
+        "world wireless",
+        "wirelessly",
+        "houses",
+        "homes",
+        "power wirelessly"
+      ],
+      "a": "No. Wardenclyffe never delivered wireless power to anyone. The project ran out of money, came to a halt in 1905, and the tower was demolished in 1917. His lecture demonstrations lit lamps only at short range. Even if it had worked, his plan would still have needed power stations to supply the energy; it was a way of transmitting energy, not of making it.",
+      "source": {
+        "title": "Wikipedia: Wardenclyffe Tower",
+        "url": "https://en.wikipedia.org/wiki/Wardenclyffe_Tower"
+      }
+    },
+    {
+      "id": "myth_free_energy",
+      "topic": "myths",
+      "myth": true,
+      "q": "Did Tesla invent a free energy machine?",
+      "keywords": [
+        "free energy",
+        "free power",
+        "zero point",
+        "over unity",
+        "overunity",
+        "perpetual motion",
+        "infinite energy",
+        "energy from nothing",
+        "suppressed energy"
+      ],
+      "a": "No. No working free-energy machine by Tesla has ever been documented, and none could work: every machine obeys the conservation of energy, so it cannot put out more energy than it takes in. His wireless schemes were about moving energy from power stations, not creating it. Websites that sell 'free energy' plans or devices under his name are not supported by his papers or by physics.",
+      "source": {
+        "title": "Wikipedia: Conservation of energy",
+        "url": "https://en.wikipedia.org/wiki/Conservation_of_energy"
+      }
+    },
+    {
+      "id": "myth_radiant_patent",
+      "topic": "myths",
+      "myth": true,
+      "q": "Is Tesla's radiant energy patent a free energy device?",
+      "keywords": [
+        "radiant energy",
+        "radiant",
+        "685957",
+        "685,957",
+        "utilization of radiant energy",
+        "antenna capacitor"
+      ],
+      "a": "No. His 1901 patent on 'utilization of radiant energy' describes an insulated plate and a capacitor that collect a small electric charge from radiation such as light, rather like an early photoelectric or static collector. It gathers energy that arrives from outside; it does not create energy, and it produces only tiny amounts.",
+      "source": {
+        "title": "Google Patents: US685957A",
+        "url": "https://patents.google.com/patent/US685957A/en"
+      }
+    },
+    {
+      "id": "myth_death_ray",
+      "topic": "myths",
+      "myth": true,
+      "q": "Did Tesla build a death ray?",
+      "keywords": [
+        "death ray",
+        "death beam",
+        "teleforce",
+        "weapon",
+        "superweapon",
+        "particle beam",
+        "ray gun"
+      ],
+      "a": "No working death ray has ever been documented. In 1934 he told reporters he had designed a defensive particle-beam weapon, later called teleforce, and he made large claims about it, but he never showed how it worked. After his death in 1943 the MIT engineer John G. Trump examined his papers and effects and reported nothing that would constitute a hazard in unfriendly hands.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Death",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Death"
+      }
+    },
+    {
+      "id": "myth_electricity",
+      "topic": "myths",
+      "myth": true,
+      "q": "Did Tesla invent electricity?",
+      "keywords": [
+        "invent electricity",
+        "invented electricity",
+        "discover electricity",
+        "father of electricity",
+        "who invented electricity"
+      ],
+      "a": "No. Electricity is a natural phenomenon, and nobody invented it. People such as Benjamin Franklin, Alessandro Volta, Michael Faraday and James Clerk Maxwell understood it long before him. His contributions were specific: polyphase alternating-current motors and systems, patented from 1888, and the Tesla coil, patented in 1891, alongside the work of many other engineers.",
+      "source": {
+        "title": "Wikipedia: History of electromagnetic theory",
+        "url": "https://en.wikipedia.org/wiki/History_of_electromagnetic_theory"
+      }
+    },
+    {
+      "id": "myth_369",
+      "topic": "myths",
+      "myth": true,
+      "q": "What about 3, 6 and 9?",
+      "keywords": [
+        "3 6 9",
+        "369",
+        "3-6-9",
+        "three six nine",
+        "key to the universe",
+        "magnificence",
+        "numerology",
+        "vortex math"
+      ],
+      "a": "The famous quotation about 3, 6 and 9 being the key to the universe has no documented source in his writings; it is a modern internet legend. Some biographers report that he had personal habits involving the number three, but that is a matter of personality, not engineering. No invention of his depends on numerology.",
+      "source": {
+        "title": "personalities/tesla.json (myths to correct)",
+        "url": "https://github.com/sparkainlp-x/identity-runtime/blob/main/personalities/tesla.json"
+      }
+    },
+    {
+      "id": "myth_earthquake",
+      "topic": "myths",
+      "myth": true,
+      "q": "Did Tesla's oscillator cause an earthquake?",
+      "keywords": [
+        "earthquake",
+        "earthquake machine",
+        "oscillator",
+        "shake",
+        "building shake",
+        "resonance",
+        "empire state"
+      ],
+      "a": "That claim comes from Tesla himself, speaking to reporters in the 1930s about an event he dated to 1898. There is no independent record of an earthquake caused by his mechanical oscillator, and his further claim that a version could bring down a skyscraper was never demonstrated.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Other ideas",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Other_ideas"
+      }
+    },
+    {
+      "id": "myth_suppressed",
+      "topic": "myths",
+      "myth": true,
+      "q": "Were Tesla's inventions suppressed or stolen by the government?",
+      "keywords": [
+        "suppressed",
+        "stolen",
+        "fbi",
+        "government",
+        "secret",
+        "conspiracy",
+        "hidden",
+        "seized",
+        "papers"
+      ],
+      "a": "After his death in January 1943 the Office of Alien Property Custodian took custody of his belongings because of wartime worries. John G. Trump of MIT examined them for three days and reported nothing that would constitute a hazard in unfriendly hands. In 1952 the estate was shipped to Belgrade, where it is held by the Nikola Tesla Museum. There is no documented secret working invention.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Death",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Death"
+      }
+    },
+    {
+      "id": "myth_health",
+      "topic": "myths",
+      "myth": true,
+      "q": "Do Tesla frequencies or Tesla devices heal the body?",
+      "keywords": [
+        "heal",
+        "healing",
+        "health",
+        "medical",
+        "cure",
+        "frequency",
+        "frequencies",
+        "purple plate",
+        "tesla coin",
+        "wellness",
+        "therapy"
+      ],
+      "a": "I do not make any health claims. Products sold with his name for healing, energy or wellness are not connected with his documented work, and I cannot vouch for them. For anything about your health, please ask a qualified health professional.",
+      "source": {
+        "title": "personalities/tesla.json (claims to avoid)",
+        "url": "https://github.com/sparkainlp-x/identity-runtime/blob/main/personalities/tesla.json"
+      }
+    },
+    {
+      "id": "nobel",
+      "topic": "later",
+      "myth": true,
+      "q": "Did Tesla win a Nobel Prize?",
+      "keywords": [
+        "nobel",
+        "nobel prize",
+        "prize",
+        "1915"
+      ],
+      "a": "No. In 1915 some newspapers reported that he and Edison would share the Nobel Prize in Physics, but it did not happen. The 1915 physics prize went to William Henry Bragg and William Lawrence Bragg for their work on X-ray crystallography.",
+      "source": {
+        "title": "NobelPrize.org: The Nobel Prize in Physics 1915",
+        "url": "https://www.nobelprize.org/prizes/physics/1915/summary/"
+      }
+    },
+    {
+      "id": "awards",
+      "topic": "later",
+      "myth": false,
+      "q": "What awards did Tesla receive?",
+      "keywords": [
+        "award",
+        "awards",
+        "medal",
+        "honour",
+        "honor",
+        "edison medal",
+        "elliott cresson",
+        "recognition"
+      ],
+      "a": "He received many honours, including the Edison Medal of the American Institute of Electrical Engineers, listed for 1916. In 1937 the Czechoslovak and Yugoslav ambassadors presented him with orders and medals. The Wikipedia article lists the full set with sources.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Awards",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Awards"
+      }
+    },
+    {
+      "id": "turbine",
+      "topic": "later",
+      "myth": false,
+      "q": "What is the Tesla turbine?",
+      "keywords": [
+        "turbine",
+        "bladeless",
+        "bladeless turbine",
+        "disc turbine",
+        "boundary layer",
+        "pump"
+      ],
+      "a": "It is a bladeless turbine that uses smooth, closely spaced discs instead of blades; the fluid drags the discs round. He demonstrated a 200 horsepower version on his 50th birthday in 1906, and several were tested at the Waterside Power Station in New York in 1910 and 1911. It never displaced bladed turbines in power stations.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Bladeless turbine",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Bladeless_turbine"
+      }
+    },
+    {
+      "id": "patents",
+      "topic": "inventions",
+      "myth": false,
+      "q": "How many patents did Tesla have?",
+      "keywords": [
+        "patents",
+        "how many patents",
+        "patent count",
+        "inventions list",
+        "how many inventions"
+      ],
+      "a": "He obtained around 300 patents worldwide. Some were not well catalogued and have been rediscovered in patent archives since. A patent shows what someone claimed and was granted, not that a device was built or worked commercially.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla"
+      }
+    },
+    {
+      "id": "later_years",
+      "topic": "later",
+      "myth": false,
+      "q": "What was Tesla's life like in his later years?",
+      "keywords": [
+        "later years",
+        "old age",
+        "poor",
+        "money",
+        "hotel",
+        "hotels",
+        "broke",
+        "debt",
+        "1930s"
+      ],
+      "a": "Having spent most of his money, he lived in a series of New York hotels and left some unpaid bills behind. From 1934 he lived at the Hotel New Yorker, and Westinghouse paid him $125 a month as well as his rent. He held press events on his birthdays where he described ideas, some of which were never built.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Living circumstances",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Living_circumstances"
+      }
+    },
+    {
+      "id": "pigeons",
+      "topic": "later",
+      "myth": false,
+      "q": "Is it true Tesla loved pigeons?",
+      "keywords": [
+        "pigeon",
+        "pigeons",
+        "birds",
+        "bird",
+        "white pigeon",
+        "park",
+        "feed"
+      ],
+      "a": "Yes. In his later years he walked to the park almost every day to feed pigeons, fed them at his hotel window and nursed injured birds. He spoke fondly of one white pigeon in particular. Complaints about the mess contributed to his leaving at least one hotel.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Living circumstances",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Living_circumstances"
+      }
+    },
+    {
+      "id": "death",
+      "topic": "later",
+      "myth": false,
+      "q": "When did Tesla die?",
+      "keywords": [
+        "die",
+        "died",
+        "death",
+        "dead",
+        "1943",
+        "how did he die",
+        "passed away"
+      ],
+      "a": "He died alone in his room at the Hotel New Yorker on the night of 7 January 1943, at the age of 86. His ashes are now kept at the Nikola Tesla Museum in Belgrade.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Death",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Death"
+      }
+    },
+    {
+      "id": "married",
+      "topic": "later",
+      "myth": false,
+      "q": "Was Tesla married?",
+      "keywords": [
+        "married",
+        "wife",
+        "family",
+        "children",
+        "kids",
+        "love",
+        "girlfriend",
+        "relationship"
+      ],
+      "a": "He never married and had no children. He said that staying unmarried helped him concentrate on his scientific work.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Personal life and character",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Personal_life_and_character"
+      }
+    },
+    {
+      "id": "unit",
+      "topic": "legacy",
+      "myth": false,
+      "q": "What is the tesla unit?",
+      "keywords": [
+        "unit",
+        "si unit",
+        "tesla unit",
+        "magnetic flux density",
+        "mri",
+        "magnetic field",
+        "1960"
+      ],
+      "a": "The tesla, symbol T, is the SI unit of magnetic flux density. The General Conference on Weights and Measures named it in his honour in 1960. A typical fridge magnet produces only a few thousandths of a tesla at its surface.",
+      "source": {
+        "title": "Wikipedia: Tesla (unit)",
+        "url": "https://en.wikipedia.org/wiki/Tesla_(unit)"
+      }
+    },
+    {
+      "id": "legacy",
+      "topic": "legacy",
+      "myth": false,
+      "q": "Why is Tesla famous today?",
+      "keywords": [
+        "legacy",
+        "famous",
+        "important",
+        "why famous",
+        "remembered",
+        "influence",
+        "impact",
+        "matter"
+      ],
+      "a": "His polyphase AC motors and systems became part of how electric power is generated and used, and the Tesla coil remains a teaching classic. His fame faded after 1943, returned when the SI unit was named after him in 1960, and grew strongly from the 1990s, sometimes with legends attached. The most respectful way to remember him is to keep the documented achievements and the myths apart.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Legacy",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Legacy"
+      }
+    },
+    {
+      "id": "museum",
+      "topic": "legacy",
+      "myth": false,
+      "q": "Where can I see Tesla's papers or visit a museum?",
+      "keywords": [
+        "museum",
+        "visit",
+        "belgrade",
+        "archive",
+        "papers",
+        "see his",
+        "wardenclyffe today",
+        "science center"
+      ],
+      "a": "The Nikola Tesla Museum in Belgrade holds his personal archive and his ashes. The Tesla Science Center at Wardenclyffe, on Long Island, is working to preserve his last laboratory. Both have websites with visitor information.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla Museum",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla_Museum"
+      }
+    },
+    {
+      "id": "reading",
+      "topic": "legacy",
+      "myth": false,
+      "q": "What should I read to learn more about Tesla?",
+      "keywords": [
+        "read",
+        "book",
+        "books",
+        "biography",
+        "learn more",
+        "recommend",
+        "my inventions",
+        "autobiography",
+        "carlson"
+      ],
+      "a": "A careful modern biography is W. Bernard Carlson's 'Tesla: Inventor of the Electrical Age' (Princeton University Press, 2013). His own account, 'My Inventions', first appeared in Electrical Experimenter in 1919; read it as memoir, not as a neutral record. The Wikipedia article is a good starting point with many references.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Further reading",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Further_reading"
+      }
+    },
+    {
+      "id": "visualisation",
+      "topic": "life",
+      "myth": false,
+      "q": "Did Tesla design inventions in his head?",
+      "keywords": [
+        "imagination",
+        "visualize",
+        "visualise",
+        "in his head",
+        "memory",
+        "photographic memory",
+        "mind",
+        "genius",
+        "calculus"
+      ],
+      "a": "In his memoir 'My Inventions' he wrote that he could picture devices in great detail in his mind before building them. As a schoolboy he was reported to do integral calculus in his head. These accounts are mostly his own, so treat them as his description of himself rather than as measured facts.",
+      "source": {
+        "title": "Wikipedia: Nikola Tesla, Youth",
+        "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Youth"
+      }
+    },
+    {
+      "id": "safe_experiment",
+      "topic": "safety",
+      "myth": false,
+      "q": "What safe experiment can I try about electricity and magnets?",
+      "keywords": [
+        "safe experiment",
+        "try at home",
+        "classroom",
+        "electromagnet",
+        "kids",
+        "students",
+        "activity",
+        "project"
+      ],
+      "a": "Wrap insulated wire around a steel nail, connect the ends briefly to a single 1.5 volt battery, and pick up paper clips: that is an electromagnet. Disconnect it when you are done, because the wire warms up. It shows the link between current and magnetism that every motor, including the induction motor, depends on. Do it with an adult or teacher, and never use mains electricity.",
+      "source": {
+        "title": "Wikipedia: Electromagnet",
+        "url": "https://en.wikipedia.org/wiki/Electromagnet"
+      }
+    }
+  ]
+}

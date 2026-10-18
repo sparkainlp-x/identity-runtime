@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>identity-runtime: talk with the Tesla guide</title>
+<meta name="description" content="Ask a fictional educational character inspired by Nikola Tesla about the history of electricity. Scripted, sourced answers; browser speech; research prototype.">
+<style>
+:root{--bg:#0b1630;--panel:#12224a;--panel2:#0f1d3f;--line:#2a3d6e;--text:#e8ecf6;--muted:#b3bfd9;--gold:#c9a84c;--cyan:#4fd1e8;--red:#f08a80;--green:#7fd8a6;--t:.35s}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+a{color:var(--cyan)}
+code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem}
+header,main,footer{max-width:72rem;margin:0 auto;padding:0 1.25rem}
+header{padding-top:1.1rem}
+header h1{margin:0;font-size:1.45rem;color:var(--gold);font-weight:650}
+.notice{margin:.6rem 0 .5rem;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:.5rem;padding:.6rem .9rem;font-size:.92rem}
+.notice strong{color:var(--gold)}
+.status{font-size:.8rem;color:var(--muted);margin:.2rem 0 1rem;overflow-wrap:anywhere}
+.status b{color:var(--text);font-weight:600}
+.layout{display:grid;grid-template-columns:17rem 1fr;gap:1.1rem;align-items:start}
+@media (max-width:820px){.layout{grid-template-columns:1fr}}
+figure{margin:0;background:var(--panel2);border:1px solid var(--line);border-radius:.6rem;padding:.7rem}
+figure img{display:block;width:100%;height:auto;border-radius:.4rem;filter:sepia(.15);transition:box-shadow var(--t)}
+body.speaking figure img{box-shadow:0 0 0 2px var(--gold),0 0 26px rgba(79,209,232,.35)}
+figcaption{font-size:.76rem;color:var(--muted);margin-top:.5rem}
+.voice{margin-top:.8rem;background:var(--panel2);border:1px solid var(--line);border-radius:.6rem;padding:.7rem;font-size:.84rem}
+.voice h2,.chat h2{margin:0 0 .4rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);font-weight:600}
+.voice label{display:block;margin:.35rem 0 .1rem;color:var(--muted)}
+.voice select,.voice input[type=range]{width:100%}
+select,button,input[type=text]{font:inherit}
+select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:.35rem;padding:.25rem}
+button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:.4rem;padding:.42rem .8rem;cursor:pointer;font-size:.88rem}
+button:hover{border-color:var(--gold)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+button.primary{background:var(--gold);border-color:var(--gold);color:#1a1405;font-weight:600}
+button:disabled{opacity:.5;cursor:not-allowed}
+.chat{background:var(--panel2);border:1px solid var(--line);border-radius:.6rem;padding:.8rem;display:flex;flex-direction:column;min-height:32rem}
+.log{flex:1;overflow-y:auto;max-height:30rem;padding-right:.2rem;display:flex;flex-direction:column;gap:.6rem}
+.msg{border-radius:.55rem;padding:.55rem .75rem;max-width:92%;animation:fade var(--t) ease-out}
+.msg.you{align-self:flex-end;background:#1a2f60;border:1px solid var(--line)}
+.msg.guide{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold)}
+.msg.guide.myth{border-left-color:var(--cyan)}
+.msg.fallback{border-left-color:var(--red)}
+.msg .who{font-size:.72rem;color:var(--muted);margin-bottom:.15rem;text-transform:uppercase;letter-spacing:.06em}
+.msg p{margin:0}
+.msg .meta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.45rem;font-size:.78rem;color:var(--muted)}
+.msg .meta button{padding:.2rem .6rem;font-size:.78rem}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.caption{margin:.6rem 0 0;min-height:2.6rem;background:#081127;border:1px solid var(--line);border-radius:.4rem;padding:.4rem .6rem;font-size:.86rem;color:var(--text)}
+.caption span{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;margin-right:.4rem}
+form{display:flex;gap:.45rem;margin-top:.7rem;flex-wrap:wrap}
+form input[type=text]{flex:1 1 14rem;min-width:0;background:#081127;color:var(--text);border:1px solid var(--line);border-radius:.4rem;padding:.5rem .65rem}
+.hint{font-size:.76rem;color:var(--muted);margin:.35rem 0 0}
+.suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
+.suggest button{font-size:.78rem;padding:.25rem .6rem;border-radius:1rem;color:var(--muted)}
+.suggest button:hover{color:var(--text)}
+.topics{margin-top:1rem;font-size:.84rem}
+.topics details{background:var(--panel2);border:1px solid var(--line);border-radius:.5rem;padding:.5rem .8rem}
+.topics summary{cursor:pointer;color:var(--gold)}
+.topics ul{columns:2 18rem;margin:.5rem 0 0;padding-left:1.1rem}
+.topics li button{all:unset;cursor:pointer;color:var(--cyan);text-decoration:underline;text-underline-offset:2px}
+.topics li button:focus-visible{outline:2px solid var(--cyan)}
+footer{margin-top:1.4rem;padding-top:1rem;padding-bottom:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--line)}
+footer p{margin:.3rem 0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){:root{--t:0s}.msg{animation:none}.log{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="sr" href="#ask">Skip to the question box</a>
+<header>
+  <h1>Talk with the Tesla guide</h1>
+  <p class="notice" role="note"><strong>Fictional educational character.</strong> The Inventor's Notebook guide is inspired by the historical inventor Nikola Tesla (1856-1943). It is not Tesla himself and does not speak for him. Its answers are scripted in advance from cited sources; it is not an AI chatbot and generates nothing. Not affiliated with or endorsed by Tesla, Inc. Research prototype.</p>
+  <p class="status" id="status" aria-label="Runtime status"></p>
+</header>
+<main>
+  <div class="layout">
+    <aside>
+      <figure>
+        <img src="assets/tesla-sarony-c1890.jpg" width="500" height="670" alt="Black-and-white studio portrait of the historical Nikola Tesla, about age 34, photographed by Napoleon Sarony around 1890.">
+        <figcaption>The historical Nikola Tesla, about age 34. Photograph by Napoleon Sarony, c. 1890. Public domain (copyright expired), via <a href="https://commons.wikimedia.org/wiki/File:Tesla_circa_1890.jpeg">Wikimedia Commons</a>. Shown for historical context; the guide on this page is a fictional character, not the person in the photograph.</figcaption>
+      </figure>
+      <section class="voice" aria-labelledby="hVoice">
+        <h2 id="hVoice">Voice</h2>
+        <p class="hint" id="voiceLabel"></p>
+        <div id="voiceControls">
+          <label for="voiceSel">Browser voice</label>
+          <select id="voiceSel"></select>
+          <label for="rate">Rate <span id="rateVal"></span></label>
+          <input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9">
+          <label for="pitch">Pitch <span id="pitchVal"></span></label>
+          <input type="range" id="pitch" min="0.5" max="1.5" step="0.05" value="0.85">
+          <p style="margin:.6rem 0 0;display:flex;gap:.4rem;flex-wrap:wrap">
+            <button type="button" id="mute" aria-pressed="false">Mute voice</button>
+            <button type="button" id="stop">Stop</button>
+          </p>
+        </div>
+        <p class="hint" id="noVoice" hidden>Your browser has no speech synthesis. Answers are shown as text.</p>
+      </section>
+    </aside>
+    <section class="chat" aria-labelledby="hChat">
+      <h2 id="hChat">Conversation</h2>
+      <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation with the guide"></div>
+      <p class="caption" id="caption" aria-hidden="true"><span>Caption</span><em id="capText">Captions of spoken answers appear here.</em></p>
+      <form id="form" autocomplete="off">
+        <label class="sr" for="ask">Your question</label>
+        <input type="text" id="ask" name="q" maxlength="300" placeholder="Ask about AC motors, Wardenclyffe, Edison, myths...">
+        <button type="submit" class="primary">Ask</button>
+        <button type="button" id="mic" aria-pressed="false" hidden>Speak a question</button>
+      </form>
+      <p class="hint" id="micHint">Type a question and press Enter.</p>
+      <div class="suggest" id="suggest" role="group" aria-label="Suggested questions"></div>
+    </section>
+  </div>
+  <section class="topics" aria-label="All scripted questions">
+    <details><summary>All <span id="count"></span> scripted questions</summary><ul id="allq"></ul></details>
+  </section>
+</main>
+<footer>
+  <p><strong>Fictional educational character inspired by Nikola Tesla (1856-1943).</strong> Scripted answers written from the cited sources, matched to your words by simple keyword rules in your browser. Not Tesla himself, not an AI chatbot, not affiliated with or endorsed by Tesla, Inc. Voices are your browser's synthetic voices, not recordings or imitations of Tesla.</p>
+  <p>Privacy: this page makes no network requests of its own and stores nothing. If you use the microphone, speech recognition is done by your browser, which may send the audio to its maker's servers.</p>
+  <p>Portrait: Napoleon Sarony, c. 1890, public domain, <a href="https://commons.wikimedia.org/wiki/File:Tesla_circa_1890.jpeg">Wikimedia Commons file page</a>; see <a href="https://github.com/sparkainlp-x/identity-runtime/blob/main/CREDITS.md">CREDITS.md</a>.</p>
+  <p><a href="index.html">Lifecycle demo</a> · <a href="animation.html">Animated walkthrough</a> · <a href="https://github.com/sparkainlp-x/identity-runtime">Source</a>. AGPL-3.0-only. Jean-François Brisson, Spark AI NLP, Fredericton, New Brunswick, Canada.</p>
+</footer>
+<script id="talk" type="application/json">/*TALK_DATA*/</script>
+<script>
+(function(){
+"use strict";
+var D=JSON.parse(document.getElementById("talk").textContent);
+var $=function(id){return document.getElementById(id)};
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var S=D.session;
+
+/* status line: recorded from the real runtime at build time */
+$("status").innerHTML="";
+(function(){
+  var parts=[
+    ["Persona ",S.avatar_id+" "+S.manifest_version],
+    [" committed as version ",S.manifest_checksum.slice(0,16)],
+    [" after two-person approval of ",S.quorum_modules.join(" and ")],
+    [". This page performs one read-only action, respond_in_chat in the education context: ",S.actions.respond_in_chat],
+    [". send_email: ",S.actions.send_email],
+    [". spend_money: ",S.actions.spend_money],
+    [". Ledger verified: ",String(S.ledger.valid)+", "+S.ledger.entries+" entries. Recorded at build time with identity-runtime "+S.version+"."]
+  ];
+  parts.forEach(function(p){$("status").appendChild(document.createTextNode(p[0]));var b=document.createElement("b");b.textContent=p[1];$("status").appendChild(b);});
+})();
+$("voiceLabel").textContent=D.persona.voice_label;
+
+/* ---- matching ---- */
+var STOP={"a":1,"an":1,"the":1,"is":1,"are":1,"was":1,"were":1,"did":1,"do":1,"does":1,"of":1,"to":1,"in":1,"on":1,"and":1,"or":1,"it":1,"its":1,"he":1,"his":1,"him":1,"tesla":1,"nikola":1,"tesla's":1,"what":1,"who":1,"how":1,"why":1,"when":1,"where":1,"which":1,"me":1,"tell":1,"about":1,"you":1,"your":1,"can":1,"i":1,"for":1,"with":1,"that":1,"this":1,"be":1,"have":1,"has":1,"had":1,"there":1,"any":1,"please":1,"really":1,"true":1,"mr":1};
+function norm(s){return (" "+String(s).toLowerCase().replace(/[\u2019']/g,"").replace(/(\d),(\d)/g,"$1$2").replace(/[^a-z0-9]+/g," ")+" ").replace(/\s+/g," ");}
+function stem(w){if(w.length>5&&/ing$/.test(w))return w.slice(0,-3);if(w.length>4&&/ed$/.test(w))return w.slice(0,-2);if(w.length>3&&/s$/.test(w)&&!/ss$/.test(w))return w.slice(0,-1);return w;}
+function toks(s){return norm(s).trim().split(" ").filter(function(w){return w&&!STOP[w];}).map(stem);}
+function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var p=[],i,j;for(j=0;j<=b.length;j++)p[j]=j;for(i=1;i<=a.length;i++){var c=[i];for(j=1;j<=b.length;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[b.length];}
+var E=D.entries.map(function(e){
+  return {e:e,kw:e.keywords.map(function(k){var n=norm(k);return {n:n,multi:n.trim().indexOf(" ")>0,t:toks(k)};}),qt:toks(e.q)};
+});
+function score(query){
+  var nq=norm(query),qt=toks(query),set={};qt.forEach(function(t){set[t]=1;});
+  return E.map(function(x){
+    var s=0,hit={};
+    x.kw.forEach(function(k){
+      if(k.multi){if(nq.indexOf(k.n)>=0){s+=2+k.t.length;k.t.forEach(function(t){hit[t]=1;});}}
+      else if(k.t.length){var t=k.t[0];
+        if(set[t]){if(!hit[t]){s+=2;hit[t]=1;}}
+        else if(t.length>=5){for(var i=0;i<qt.length;i++){if(qt[i].length>=5&&lev(qt[i],t)<=(t.length>=8?2:1)){if(!hit[t]){s+=1.5;hit[t]=1;}break;}}}
+      }
+    });
+    x.qt.forEach(function(t){if(set[t]&&!hit[t]){s+=0.6;hit[t]=1;}});
+    return {x:x,s:s};
+  }).sort(function(a,b){return b.s-a.s;});
+}
+var THRESH=2;
+
+/* ---- voice ---- */
+var synth=window.speechSynthesis,voices=[],muted=false;
+var PREF=/(daniel|george|arthur|oliver|male|guy|ryan|thomas|fred|alex|david|mark|james|aaron|rishi|google uk english male)/i;
+function loadVoices(){
+  if(!synth)return;
+  voices=synth.getVoices().filter(function(v){return /^en/i.test(v.lang);});
+  var sel=$("voiceSel"),cur=sel.value;sel.innerHTML="";
+  if(!voices.length){var o=document.createElement("option");o.textContent="Default browser voice";o.value="";sel.appendChild(o);return;}
+  var best=-1;voices.forEach(function(v,i){var o=document.createElement("option");o.value=String(i);o.textContent=v.name+" ("+v.lang+")";sel.appendChild(o);if(best<0&&PREF.test(v.name))best=i;});
+  sel.value=cur&&sel.querySelector('option[value="'+cur+'"]')?cur:String(best<0?0:best);
+}
+if(synth){loadVoices();if("onvoiceschanged" in synth)synth.onvoiceschanged=loadVoices;}
+else{$("voiceControls").hidden=true;$("noVoice").hidden=false;}
+function upd(){$("rateVal").textContent=$("rate").value;$("pitchVal").textContent=$("pitch").value;}
+$("rate").addEventListener("input",upd);$("pitch").addEventListener("input",upd);upd();
+function stop(){if(synth)synth.cancel();document.body.classList.remove("speaking");}
+function speak(text){
+  $("capText").textContent=text;
+  if(!synth||muted)return;
+  synth.cancel();
+  var u=new SpeechSynthesisUtterance(text),v=voices[Number($("voiceSel").value)];
+  if(v){u.voice=v;u.lang=v.lang;}else u.lang="en-US";
+  u.rate=Number($("rate").value);u.pitch=Number($("pitch").value);
+  u.onstart=function(){document.body.classList.add("speaking");};
+  u.onend=u.onerror=function(){document.body.classList.remove("speaking");};
+  synth.speak(u);
+}
+$("mute").addEventListener("click",function(){muted=!muted;this.setAttribute("aria-pressed",String(muted));this.textContent=muted?"Unmute voice":"Mute voice";if(muted)stop();});
+$("stop").addEventListener("click",stop);
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape")stop();});
+
+/* ---- chat ---- */
+var log=$("log");
+function add(who,text,cls){
+  var m=document.createElement("div");m.className="msg "+cls;
+  var w=document.createElement("div");w.className="who";w.textContent=who;m.appendChild(w);
+  var p=document.createElement("p");p.textContent=text;m.appendChild(p);
+  log.appendChild(m);log.scrollTop=log.scrollHeight;return m;
+}
+function answer(e,isFallback,text){
+  var t=text||e.a;
+  var m=add("Guide (scripted)",t,"guide"+(e&&e.myth?" myth":"")+(isFallback?" fallback":""));
+  var meta=document.createElement("div");meta.className="meta";
+  var b=document.createElement("button");b.type="button";b.textContent="Speak";b.setAttribute("aria-label","Speak this answer aloud");
+  b.addEventListener("click",function(){var was=muted;muted=false;speak(t);muted=was;});
+  if(!synth)b.disabled=true;
+  meta.appendChild(b);
+  if(e&&e.myth){var my=document.createElement("span");my.textContent="Myth correction.";meta.appendChild(my);}
+  if(e&&e.source){var s=document.createElement("span");s.appendChild(document.createTextNode("Source: "));var a=document.createElement("a");a.href=e.source.url;a.textContent=e.source.title;a.rel="noopener";a.target="_blank";s.appendChild(a);meta.appendChild(s);}
+  m.appendChild(meta);
+  speak(t);
+}
+function suggest(list){
+  var box=$("suggest");box.innerHTML="";
+  list.forEach(function(e){var b=document.createElement("button");b.type="button";b.textContent=e.q;b.addEventListener("click",function(){ask(e.q);});box.appendChild(b);});
+}
+var START=["are_you_ai","induction_motor","wardenclyffe","edison_rivalry","myth_free_energy","myth_death_ray","tesla_coil","myth_369"];
+var byId={};D.entries.forEach(function(e){byId[e.id]=e;});
+function ask(q){
+  q=String(q).trim();if(!q)return;
+  add("You",q,"you");
+  var r=score(q);
+  if(r[0].s>=THRESH){answer(r[0].x.e,false);suggest(r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;}).concat(r[0].x.e.id==="greeting"?START.slice(0,3).map(function(i){return byId[i];}):[]));}
+  else{
+    var close=r.filter(function(z){return z.s>0;}).slice(0,3).map(function(z){return z.x.e;});
+    answer(null,true,"I don't have a scripted answer for that. I only answer from a fixed list of sourced notes about Nikola Tesla and the history of electricity, so I would rather say so than guess."+(close.length?" Perhaps one of the suggestions below is close.":" Try one of the suggested questions below."));
+    suggest(close.length?close:START.slice(0,4).map(function(i){return byId[i];}));
+  }
+}
+$("form").addEventListener("submit",function(ev){ev.preventDefault();var i=$("ask");ask(i.value);i.value="";i.focus();});
+
+/* ---- speech recognition, where the browser supports it ---- */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  var rec=new SR(),listening=false,heard="";
+  rec.lang="en-US";rec.interimResults=true;rec.maxAlternatives=1;rec.continuous=false;
+  var mic=$("mic");mic.hidden=false;
+  $("micHint").textContent="Type a question and press Enter, or press Speak a question and talk. Speech recognition is done by your browser.";
+  rec.onresult=function(ev){var t="";for(var i=0;i<ev.results.length;i++)t+=ev.results[i][0].transcript;heard=t;$("ask").value=t;};
+  rec.onend=function(){listening=false;mic.setAttribute("aria-pressed","false");mic.textContent="Speak a question";if(heard){var q=heard;heard="";$("ask").value="";ask(q);}};
+  rec.onerror=function(ev){$("micHint").textContent="Microphone unavailable ("+ev.error+"). You can still type your question.";};
+  mic.addEventListener("click",function(){
+    if(listening){rec.stop();return;}
+    stop();heard="";
+    try{rec.start();listening=true;mic.setAttribute("aria-pressed","true");mic.textContent="Listening... press to stop";}catch(err){$("micHint").textContent="Could not start the microphone. You can still type your question.";}
+  });
+}else{
+  $("micHint").textContent="Type a question and press Enter. Speaking a question needs a browser with speech recognition, such as Chrome on Android or desktop.";
+}
+
+/* ---- topic list and greeting ---- */
+$("count").textContent=String(D.entries.length);
+D.entries.forEach(function(e){var li=document.createElement("li"),b=document.createElement("button");b.type="button";b.textContent=e.q;b.addEventListener("click",function(){ask(e.q);$("ask").focus();});li.appendChild(b);$("allq").appendChild(li);});
+add("Guide (scripted)",D.persona.greeting,"guide");
+suggest(START.map(function(i){return byId[i];}).filter(Boolean));
+if(reduce)log.style.scrollBehavior="auto";
+})();
+</script>
+</body>
+</html>
