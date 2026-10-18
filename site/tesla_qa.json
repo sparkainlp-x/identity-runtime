@@ -178,7 +178,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Working at Edison",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Working_at_Edison"
-      }
+      },
+      "related": [
+        "arrival_us",
+        "edison_bonus",
+        "education"
+      ]
     },
     {
       "id": "arrival_us",
@@ -220,7 +225,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Working at Edison",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Working_at_Edison"
-      }
+      },
+      "related": [
+        "edison_rivalry",
+        "early_jobs",
+        "light_company"
+      ]
     },
     {
       "id": "edison_rivalry",
@@ -242,7 +252,12 @@
       "source": {
         "title": "Wikipedia: War of the currents",
         "url": "https://en.wikipedia.org/wiki/War_of_the_currents"
-      }
+      },
+      "related": [
+        "war_of_currents",
+        "edison_bonus",
+        "westinghouse"
+      ]
     },
     {
       "id": "war_of_currents",
@@ -264,7 +279,12 @@
       "source": {
         "title": "Wikipedia: War of the currents",
         "url": "https://en.wikipedia.org/wiki/War_of_the_currents"
-      }
+      },
+      "related": [
+        "ac_vs_dc",
+        "westinghouse",
+        "edison_rivalry"
+      ]
     },
     {
       "id": "ac_vs_dc",
@@ -285,7 +305,12 @@
       "source": {
         "title": "Wikipedia: Alternating current",
         "url": "https://en.wikipedia.org/wiki/Alternating_current"
-      }
+      },
+      "related": [
+        "war_of_currents",
+        "induction_motor",
+        "power_grid_today"
+      ]
     },
     {
       "id": "light_company",
@@ -327,7 +352,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, AC and the induction motor",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#AC_and_the_induction_motor"
-      }
+      },
+      "related": [
+        "how_motor_works",
+        "ferraris",
+        "westinghouse"
+      ]
     },
     {
       "id": "how_motor_works",
@@ -392,7 +422,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, AC and the induction motor",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#AC_and_the_induction_motor"
-      }
+      },
+      "related": [
+        "royalties",
+        "niagara",
+        "columbian_expo"
+      ]
     },
     {
       "id": "royalties",
@@ -435,7 +470,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Tesla coil",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Tesla_coil"
-      }
+      },
+      "related": [
+        "build_coil",
+        "wireless_lighting",
+        "colorado"
+      ]
     },
     {
       "id": "build_coil",
@@ -521,7 +561,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Consulting on Niagara",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Consulting_on_Niagara"
-      }
+      },
+      "related": [
+        "power_grid_today",
+        "westinghouse",
+        "ac_vs_dc"
+      ]
     },
     {
       "id": "lab_fire",
@@ -624,7 +669,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Colorado Springs",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Colorado_Springs"
-      }
+      },
+      "related": [
+        "lightning",
+        "wardenclyffe",
+        "mars_signals"
+      ]
     },
     {
       "id": "mars_signals",
@@ -665,7 +715,12 @@
       "source": {
         "title": "Wikipedia: Wardenclyffe Tower",
         "url": "https://en.wikipedia.org/wiki/Wardenclyffe_Tower"
-      }
+      },
+      "related": [
+        "myth_wireless_homes",
+        "colorado",
+        "museum"
+      ]
     },
     {
       "id": "myth_wireless_homes",
@@ -711,7 +766,12 @@
       "source": {
         "title": "Wikipedia: Conservation of energy",
         "url": "https://en.wikipedia.org/wiki/Conservation_of_energy"
-      }
+      },
+      "related": [
+        "myth_radiant_patent",
+        "energy_vs_power",
+        "myth_suppressed"
+      ]
     },
     {
       "id": "myth_radiant_patent",
@@ -952,7 +1012,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla, Living circumstances",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla#Living_circumstances"
-      }
+      },
+      "related": [
+        "pigeons",
+        "death",
+        "myth_suppressed"
+      ]
     },
     {
       "id": "pigeons",
@@ -1165,7 +1230,12 @@
       "source": {
         "title": "Wikipedia: Nikola Tesla",
         "url": "https://en.wikipedia.org/wiki/Nikola_Tesla"
-      }
+      },
+      "related": [
+        "born",
+        "inventions_overview",
+        "later_years"
+      ]
     },
     {
       "id": "what_is_electricity",
@@ -1186,7 +1256,12 @@
       "source": {
         "title": "Wikipedia: Electricity",
         "url": "https://en.wikipedia.org/wiki/Electricity"
-      }
+      },
+      "related": [
+        "electric_current",
+        "myth_electricity",
+        "lightning"
+      ]
     },
     {
       "id": "electric_current",
@@ -1336,7 +1411,12 @@
       "source": {
         "title": "Wikipedia: Lightning",
         "url": "https://en.wikipedia.org/wiki/Lightning"
-      }
+      },
+      "related": [
+        "colorado",
+        "tesla_coil",
+        "what_is_electricity"
+      ]
     },
     {
       "id": "energy_vs_power",

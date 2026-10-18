@@ -427,25 +427,54 @@ function highlightMatches(text,query){
 }
 /* Decide the reply. kind is "answer", "closest", "overview" or "offtopic"; it never dead-ends on an on-topic question.
    text is plain (for speech, lip sync and captions); highlightedText is the same text, escaped, with matches marked. */
-function pick(query){
-  var p=choose(query);p.highlightedText=p.kind==="offtopic"?escapeHtml(p.text):highlightMatches(p.text,query);return p;
+function pick(query,asked){
+  var p=choose(query,asked);p.highlightedText=p.kind==="offtopic"?escapeHtml(p.text):highlightMatches(p.text,query);return p;
 }
-function choose(query){
+/* Topic groups for the topic map and for follow-up questions. A note belongs to the group of its topic unless listed in ids. */
+var GROUPS=[
+  {id:"life",label:"Life",topics:["life","edison","later","legacy"],ids:[]},
+  {id:"inventions",label:"Inventions",topics:["inventions","ac","westinghouse","radio","safety"],ids:[]},
+  {id:"basics",label:"Electricity basics",topics:["science"],ids:["ac_vs_dc","power_grid_today","unit","safe_experiment"]},
+  {id:"wireless",label:"Wireless & Wardenclyffe",topics:["wireless"],ids:[]},
+  {id:"myths",label:"Myths & facts",topics:["myths"],ids:[]},
+  {id:"about",label:"About this guide",topics:["about"],ids:[]}
+];
+function groupOf(e){
+  if(!e||e.id==="greeting")return null;
+  for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].ids.indexOf(e.id)>=0)return GROUPS[i].id;
+  for(var j=0;j<GROUPS.length;j++)if(GROUPS[j].topics.indexOf(e.topic)>=0)return GROUPS[j].id;
+  return "life";
+}
+function groupEntries(gid){return E.map(function(x){return x.e;}).filter(function(e){return groupOf(e)===gid;});}
+/* Follow-up questions: the note's own related notes, then other strong matches, then notes on the same topic, then the same
+   group, then broad notes. Never the note just given, and notes already given in this conversation only when nothing else is left. */
+function followUps(entry,first,asked,n){
+  asked=asked||{};
+  var out=[],seen={greeting:1},all=E.map(function(x){return x.e;});
+  if(entry)seen[entry.id]=1;
+  var list=(entry&&entry.related||[]).map(entryById).concat(first||[]);
+  if(entry){
+    all.forEach(function(e){if(e.topic===entry.topic)list.push(e);});
+    var g=groupOf(entry);all.forEach(function(e){if(groupOf(e)===g)list.push(e);});
+  }
+  list=list.concat(BROAD.map(entryById),[entryById(OVERVIEW)]);
+  [true,false].forEach(function(fresh){
+    list.forEach(function(e){if(e&&!seen[e.id]&&out.length<n&&(!fresh||!asked[e.id])){seen[e.id]=1;out.push(e);}});
+  });
+  return out;
+}
+function choose(query,asked){
   var r=score(query),best=r[0],top=best?best.x.e:null;
-  function fill(list,n,skip){
-    var out=[],seen={};if(skip)seen[skip]=1;
-    list.concat(BROAD).forEach(function(e){if(typeof e==="string")e=entryById(e);if(e&&!seen[e.id]&&out.length<n){seen[e.id]=1;out.push(e);}});
-    return out;
-  }
   if(best&&best.s>=THRESH){
-    var more=r.slice(1,4).filter(function(z){return z.s>=THRESH;}).map(function(z){return z.x.e;});
-    return {kind:"answer",entry:top,text:top.a,more:fill(more,3,top.id)};
+    /* other strong matches lead the chips when they share the group or score nearly as well; a stray word ("death" in "death ray") does not */
+    var more=r.slice(1,4).filter(function(z){return z.s>=THRESH&&(groupOf(z.x.e)===groupOf(top)||z.s>=best.s*.8);}).map(function(z){return z.x.e;});
+    return {kind:"answer",entry:top,text:top.a,more:followUps(top,more,asked,3)};
   }
-  if(!topical(query,best))return {kind:"offtopic",entry:null,text:OFF_TOPIC,more:fill([OVERVIEW],4)};
+  if(!topical(query,best))return {kind:"offtopic",entry:null,text:OFF_TOPIC,more:followUps(null,[entryById(OVERVIEW)],asked,4)};
   var near=r.filter(function(z){return z.s>0;}).map(function(z){return z.x.e;});
-  if(best&&best.s>=1)return {kind:"closest",entry:top,text:LEAD_CLOSE+top.a,more:fill(near.slice(1,4),3,top.id)};
+  if(best&&best.s>=1)return {kind:"closest",entry:top,text:LEAD_CLOSE+top.a,more:followUps(top,near.slice(1,4),asked,3)};
   var ov=entryById(OVERVIEW);
-  return {kind:"overview",entry:ov,text:LEAD_OVERVIEW+ov.a,more:fill(near.slice(0,3),3,OVERVIEW)};
+  return {kind:"overview",entry:ov,text:LEAD_OVERVIEW+ov.a,more:followUps(ov,near.slice(0,3),asked,3)};
 }
 /* ---- end matching ---- */
 
@@ -735,7 +764,7 @@ function suggest(list){
 }
 var START=["are_you_ai","induction_motor","wardenclyffe","edison_rivalry","myth_free_energy","myth_death_ray","tesla_coil","myth_369"];
 var byId={};D.entries.forEach(function(e){byId[e.id]=e;});
-var pending=null;
+var pending=null,asked={};
 function think(ms,then){
   var t=document.createElement("div");t.className="msg guide thinking";t.setAttribute("aria-hidden","true");
   for(var i=0;i<3;i++)t.appendChild(document.createElement("i"));
@@ -749,7 +778,8 @@ function ask(q){
   q=String(q).trim();if(!q)return;
   stopSpeech();
   add("You",q,"you");
-  var p=pick(q);
+  var p=pick(q,asked);
+  if(p.entry)asked[p.entry.id]=1;
   think(reduce?250:Math.min(1100,450+q.length*8),function(){
     answer(p.entry,p.kind==="offtopic",p.text,p.highlightedText);
     suggest(p.more);

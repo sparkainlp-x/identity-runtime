@@ -573,3 +573,49 @@ def test_paraphrases_reach_the_right_note(site):
     got = _pick_in_node(site, [q for q, _ in PARAPHRASES])["picks"]
     wrong = [(q, want, got[q]["kind"], got[q]["id"]) for q, want in PARAPHRASES if got[q]["kind"] != "answer" or got[q]["id"] != want]
     assert wrong == [], wrong
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_follow_up_chips_follow_the_conversation(site):
+    convo = ["What is a Tesla coil?", "what was wardenclyffe", "did he receive signals from mars", "tell me about electricity",
+             "free energy", "death ray", "3 6 9", "football scores", "edison"]
+    extra = (
+        "var asked={};out.convo=" + json.dumps(convo) + ".map(function(q){var p=pick(q,asked);"
+        "var r={q:q,id:p.entry&&p.entry.id,kind:p.kind,more:p.more.map(function(e){return e.id;}),"
+        "groups:p.more.map(function(e){return groupOf(e);}),group:groupOf(p.entry),before:Object.keys(asked),"
+        "linked:p.more.map(function(e){return !!p.entry&&((p.entry.related||[]).indexOf(e.id)>=0||e.topic===p.entry.topic||groupOf(e)===groupOf(p.entry));})};"
+        "if(p.entry)asked[p.entry.id]=1;return r;});"
+        "out.groups=GROUPS.map(function(g){return [g.id,groupEntries(g.id).map(function(e){return e.id;})];});"
+    )
+    out = _pick_in_node(site, [], extra)
+    for turn in out["convo"]:
+        assert turn["more"], turn
+        assert turn["id"] not in turn["more"], turn  # never the note just given
+        assert "greeting" not in turn["more"], turn
+        assert len(set(turn["more"])) == len(turn["more"]), turn
+        assert not set(turn["more"]) & set(turn["before"]), turn  # nothing already answered while fresh notes remain
+        if turn["kind"] == "answer":
+            # chips are related notes, the same topic or the same group; broad notes only fill in once the group runs out
+            assert turn["linked"][0] and turn["linked"] == sorted(turn["linked"], reverse=True), turn
+    by_q = {t["q"]: t for t in out["convo"]}
+    assert by_q["death ray"]["id"] == "myth_death_ray" and set(by_q["death ray"]["groups"]) == {"myths"}
+    assert by_q["edison"]["id"] == "edison_rivalry" and by_q["edison"]["more"][0] == "war_of_currents"
+    assert by_q["what was wardenclyffe"]["more"][0] == "myth_wireless_homes"
+    # every note shown in the topic map belongs to exactly one group; the greeting is left out
+    groups = dict((g, ids) for g, ids in out["groups"])
+    assert list(groups) == ["life", "inventions", "basics", "wireless", "myths", "about"]
+    flat = [i for ids in groups.values() for i in ids]
+    entries = json.loads((site / "talk.html").read_text(encoding="utf-8").split('<script id="talk" type="application/json">')[1].split("</script>")[0])["entries"]
+    assert sorted(flat) == sorted(e["id"] for e in entries if e["id"] != "greeting")
+    assert all(len(ids) >= 4 for ids in groups.values()), {g: len(i) for g, i in groups.items()}
+    assert "wardenclyffe" in groups["wireless"] and "ac_vs_dc" in groups["basics"] and "myth_369" in groups["myths"]
+
+
+def test_related_notes_exist_and_are_not_self():
+    entries = load_entries()
+    ids = {e["id"] for e in entries}
+    with_related = [e for e in entries if "related" in e]
+    assert len(with_related) >= 12
+    for e in with_related:
+        assert e["related"] and len(set(e["related"])) == len(e["related"]), e["id"]
+        assert all(r in ids and r != e["id"] for r in e["related"]), e["id"]
