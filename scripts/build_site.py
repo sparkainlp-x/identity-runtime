@@ -39,6 +39,7 @@ TALK_TEMPLATE = ROOT / "site" / "talk.template.html"
 TALK_QA = ROOT / "site" / "tesla_qa.json"
 TALK_PLACEHOLDER = "/*TALK_DATA*/"
 PORTRAIT = ROOT / "site" / "assets" / "tesla-sarony-c1890.jpg"
+TALK_SAMPLES = ["who_are_you", "induction_motor", "wardenclyffe", "myth_free_energy", "myth_death_ray"]
 
 
 def record_talk_session(personality: Path | None = None) -> dict:
@@ -122,8 +123,22 @@ def build_talk(out_dir: Path) -> Path:
     assets = out_dir / "assets"
     assets.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(PORTRAIT, assets / PORTRAIT.name)
+    entries = json.loads(TALK_QA.read_text(encoding="utf-8"))["entries"]
+    by_id = {e["id"]: e for e in entries}
+
+    def qa_html(items: list[dict]) -> str:
+        rows = "".join(
+            f'<dt>{html.escape(e["q"])}</dt><dd>{html.escape(e["a"])} '
+            f'<span class="src">Source: <a href="{html.escape(e["source"]["url"])}">{html.escape(e["source"]["title"])}</a></span></dd>'
+            for e in items
+        )
+        return f"<dl>{rows}</dl>"
+
+    page = template.replace(TALK_PLACEHOLDER, data)
+    page = page.replace("<!--SAMPLE_QA-->", qa_html([by_id[i] for i in TALK_SAMPLES]), 1)
+    page = page.replace("<!--NOSCRIPT_QA-->", qa_html(entries), 1)
     target = out_dir / "talk.html"
-    target.write_text(template.replace(TALK_PLACEHOLDER, data), encoding="utf-8")
+    target.write_text(page, encoding="utf-8")
     return target
 
 
