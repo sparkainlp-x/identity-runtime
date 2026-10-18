@@ -7,6 +7,7 @@
 - Talk page: male voice selection using known male and female voice names and Android voice ids, with a lowered-pitch fallback and a note when no male voice is installed, a Test voice button, and a saved female voice choice cleared on load. Still, labelled AI-generated portrait supplied by the author, never animated. Fair, solid skin colours so forced dark modes do not darken the illustration, and a closer stylised resemblance to Tesla.
 - Talk page: broad sourced notes on electricity, current, magnetism, the power grid, lightning, energy and power, Tesla's inventions and his life, with single-word keywords. Questions that match weakly get the closest note with a lead-in, on-topic questions with no match get an overview, and only off-topic questions get the note that the guide covers Tesla and the history of electricity.
 - Talk page: shorthand such as AC, DC, lab, bulb and Wardenclyffe is expanded in questions and keywords alike, and the question's words are highlighted in the answer bubble from escaped text; speech, lip sync and captions use the plain text.
+- Talk page: keyword phrases also match when other words sit between their parts, so every listed question answers with its own note (tested, along with 45 everyday phrasings); a topic map of six groups; follow-up chips drawn from related notes, the same topic and the same group, never the note just given; spoken answers revealed word by word; idle breathing, glances, a listening head tilt and faint coil arcs for the illustrated guide, pausable and off with reduced motion.
 
 ## 0.1.0 (2026-10-18)
 
