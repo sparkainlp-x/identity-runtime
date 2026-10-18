@@ -25,6 +25,9 @@ header h1{margin:0;font-size:1.45rem;color:var(--gold);font-weight:650}
 .stage{position:relative;padding:.45rem}
 .stage svg{display:block;width:100%;height:auto;border-radius:.45rem;background:#0a1430;forced-color-adjust:none;color-scheme:only light}
 @media (max-width:860px){.stage svg{max-width:19rem;margin:0 auto}}
+.stage .anim{margin:.45rem .2rem 0;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.stage .anim button{font-size:.76rem;padding:.22rem .6rem}
+.stage .anim .hint{margin:0}
 .stage .label{font-size:.76rem;color:var(--muted);margin:.45rem .2rem 0}
 #voiceNote{border-left:3px solid var(--gold);padding-left:.5rem}
 .stage .label b{color:var(--gold);font-weight:600}
@@ -220,6 +223,7 @@ body.still .msg{animation:none}
             <path d="M160 188v6" stroke="#3a3128" stroke-width=".9" opacity=".6"/>
           </g>
         </svg>
+        <p class="anim"><button type="button" id="animToggle" aria-pressed="false">Pause ambient animation</button> <span class="hint" id="animNote">Breathing, glances and faint coil arcs while idle.</span></p>
         <p class="label"><b>Illustrated character, not a likeness of a real photo.</b> An original cartoon drawn for this page. The lips follow the words being read; the coil's arcs follow the estimated mouth opening, not measured sound.</p>
       </section>
      </div>
@@ -498,12 +502,15 @@ function choose(query,asked){
 
 /* ---- avatar ---- */
 var NS="http://www.w3.org/2000/svg";
-var el={mouth:$("mouth"),inner:$("mouthInner"),clip:$("mouthClip"),teeth:$("teeth"),lip:$("lipLine"),stache:$("stache"),browL:$("browL"),browR:$("browR"),eyeL:$("eyeL"),eyeR:$("eyeR"),lidL:$("lidL"),lidR:$("lidR"),head:$("head"),arcs:$("arcs"),glow:$("coilGlow"),svg:$("avatar"),pglow:$("pglow")};
+var el={mouth:$("mouth"),inner:$("mouthInner"),clip:$("mouthClip"),teeth:$("teeth"),lip:$("lipLine"),stache:$("stache"),browL:$("browL"),browR:$("browR"),eyeL:$("eyeL"),eyeR:$("eyeR"),lidL:$("lidL"),lidR:$("lidR"),head:$("head"),body:$("body"),neck:$("neck"),collar:$("collar"),arcs:$("arcs"),glow:$("coilGlow"),svg:$("avatar"),pglow:$("pglow")};
 var KEYS=["w","open","up","round","teeth"];
 function shape(n){return VIS.shapes[n]||VIS.shapes.rest;}
 var A={cur:Object.assign({},VIS.shapes.rest),target:VIS.shapes.rest,forced:null,
   gaze:{x:0,y:0},gazeT:{x:2,y:.5},brow:0,browT:0,blink:0,blinkT0:-1,vol:0,volT:0,
-  speaking:false,thinking:false,running:false,last:0,arcAt:0,flashUntil:0,pointerAt:0};
+  speaking:false,thinking:false,running:false,last:0,arcAt:0,flashUntil:0,flashLevel:.25,pointerAt:0,
+  listening:false,tilt:0,paused:false,visible:true,lastDraw:0,wasMoving:true};
+/* idle life (breathing, a slow sway, glances, the coil's glow and faint arcs): only with motion allowed, not paused, on screen */
+function idleOn(){return !reduce&&!A.paused&&A.visible&&!document.hidden;}
 function f1(n){return Math.round(n*10)/10;}
 function renderMouth(p){
   var cx=160,my=206,w=p.w,o=Math.max(0,p.open),u=p.up,k=.55+.35*p.round,top=my-3-u,bot=my+3+o;
@@ -535,6 +542,10 @@ function drawArcs(level){
 function scheduleBlink(){setTimeout(function(){A.blinkT0=performance.now();kick();scheduleBlink();},2400+Math.random()*3600);}
 function ease(c,t,dt,tau){return c+(t-c)*(1-Math.exp(-dt/tau));}
 function frame(now){
+  var busy=A.speaking||TL.active||A.forced||A.thinking||A.listening,idle=idleOn();
+  /* idle-only frames are drawn at about 25 per second to spare phone batteries */
+  if(!busy&&idle&&!A.wasMoving&&now-A.lastDraw<40){requestAnimationFrame(frame);return;}
+  A.lastDraw=now;
   var dt=Math.min(64,now-(A.last||now));A.last=now;
   if(TL.active)TL.tick(now);
   var tgt=A.forced||A.target,moving=false;
@@ -548,22 +559,30 @@ function frame(now){
   el.browR.setAttribute("transform","translate(0 "+f1(-A.brow*5*(A.thinking?1.3:1))+") rotate("+f1(A.brow*4)+" 186 119)");
   var b=0;if(A.blinkT0>=0){var bt=(now-A.blinkT0)/150;if(bt>=2){A.blinkT0=-1;}else{b=bt<1?bt:2-bt;moving=true;}}
   var lid="translate(0 "+f1(b*14)+")";el.lidL.setAttribute("transform",lid);el.lidR.setAttribute("transform",lid);
-  if(A.speaking&&!reduce){var s=now/1000;el.head.setAttribute("transform","translate("+f1(Math.sin(s*1.3)*.8)+" "+f1(Math.sin(s*3.1)*1.3)+") rotate("+f1(Math.sin(s*1.7)*1.1)+" 160 230)");moving=true;}
-  else if(A.thinking&&!reduce){el.head.setAttribute("transform","rotate("+f1(-2.2)+" 160 230)");}
+  var s=now/1000,br=idle?Math.sin(s*1.45):0;
+  A.tilt=ease(A.tilt,A.listening&&!reduce?4:0,dt,160);if(Math.abs(A.tilt-(A.listening&&!reduce?4:0))>.02)moving=true;
+  if(A.speaking&&!reduce){el.head.setAttribute("transform","translate("+f1(Math.sin(s*1.3)*.8)+" "+f1(Math.sin(s*3.1)*1.3+br*.5)+") rotate("+f1(Math.sin(s*1.7)*1.1+A.tilt)+" 160 230)");moving=true;}
+  else if(A.thinking&&!reduce){el.head.setAttribute("transform","translate(0 "+f1(br*.8)+") rotate("+f1(-2.2+A.tilt)+" 160 230)");}
+  else if(!reduce&&(idle||A.tilt>.02)){el.head.setAttribute("transform","translate(0 "+f1(br*.9)+") rotate("+f1((idle?Math.sin(s*.33)*.7:0)+A.tilt)+" 160 230)");}
   else el.head.setAttribute("transform","");
+  var bt2="translate(0 "+f1(br*.9)+")";el.neck.setAttribute("transform",bt2);el.collar.setAttribute("transform",bt2);
+  el.body.setAttribute("transform","translate(0 "+f1(br*.45)+")");
   A.volT=(A.speaking||A.forced)?Math.min(1,.2+A.cur.open/14*.8):0;
   A.vol=ease(A.vol,A.volT,dt,80);
-  var level=reduce?0:Math.max(A.vol,now<A.flashUntil?.35:0);
+  var level=reduce?0:Math.max(A.vol,now<A.flashUntil?A.flashLevel:0);
   el.pglow.style.opacity=reduce?((A.speaking||A.forced)?".6":"0"):f1(Math.min(1,A.vol*1.1));
-  el.arcs.setAttribute("opacity",level>.02?"1":"0");el.glow.setAttribute("opacity",f1(.08+level*.55));
+  el.arcs.setAttribute("opacity",level>.02?"1":"0");el.glow.setAttribute("opacity",(.08+level*.55+(idle?.05+.04*Math.sin(s*2.1):0)).toFixed(3));
   if(level>.02&&now-A.arcAt>85){A.arcAt=now;drawArcs(level);}
   if(level>.02||A.vol>.01)moving=true;
-  if(moving||A.speaking||TL.active||A.forced){requestAnimationFrame(frame);}else{A.running=false;A.last=0;}
+  A.wasMoving=moving;
+  if(moving||busy||idle){requestAnimationFrame(frame);}else{A.running=false;A.last=0;}
 }
 function kick(){if(!A.running){A.running=true;A.last=0;requestAnimationFrame(frame);}}
-function lookAtChat(){
-  if(A.thinking)return;
-  var a=el.svg.getBoundingClientRect(),c=$("log").getBoundingClientRect();
+function lookAtChat(){lookAt($("log"));}
+/* turn the eyes toward a page element, such as the newest bubble */
+function lookAt(node){
+  if(A.thinking||!node)return;
+  var a=el.svg.getBoundingClientRect(),c=node.getBoundingClientRect();
   var dx=(c.left+c.width/2)-(a.left+a.width/2),dy=(c.top+c.height/2)-(a.top+a.height*.38),m=Math.sqrt(dx*dx+dy*dy)||1;
   A.gazeT={x:3*dx/m,y:2*dy/m};kick();
 }
@@ -573,7 +592,17 @@ if(!reduce){
     var a=el.svg.getBoundingClientRect(),ex=a.left+a.width/2,ey=a.top+a.height*.38,dx=ev.clientX-ex,dy=ev.clientY-ey,m=Math.sqrt(dx*dx+dy*dy)||1,s=Math.min(1,m/220);
     A.gazeT={x:3.2*dx/m*s,y:2.2*dy/m*s};A.pointerAt=performance.now();kick();
   },{passive:true});
-  setInterval(function(){if(!A.speaking&&!A.thinking&&performance.now()-A.flashUntil>3000&&Math.random()<.35){A.flashUntil=performance.now()+140;kick();}if(A.pointerAt&&performance.now()-A.pointerAt>4000){A.pointerAt=0;lookAtChat();}},2500);
+  setInterval(function(){
+    if(!idleOn())return;
+    var now=performance.now();
+    /* a faint arc off the coil now and then, a little stronger once in a while */
+    if(!A.speaking&&!A.thinking&&now-A.flashUntil>2200&&Math.random()<.4){A.flashLevel=Math.random()<.2?.34:.2+Math.random()*.08;A.flashUntil=now+110+Math.random()*90;kick();}
+    if(A.pointerAt&&now-A.pointerAt>4000){A.pointerAt=0;lookAtChat();}
+    /* a short idle glance, then back to the conversation */
+    else if(!A.pointerAt&&!A.speaking&&!A.thinking&&!A.listening&&Math.random()<.3){A.gazeT={x:(Math.random()*2-1)*2.6,y:(Math.random()*2-.6)*1.3};kick();setTimeout(function(){if(!A.pointerAt)lookAtChat();},650+Math.random()*500);}
+  },2300);
+  if(window.IntersectionObserver)new IntersectionObserver(function(es){A.visible=es[es.length-1].isIntersecting;kick();}).observe(el.svg);
+  document.addEventListener("visibilitychange",kick);
 }
 window.addEventListener("resize",lookAtChat,{passive:true});
 scheduleBlink();
@@ -727,7 +756,7 @@ function pickVoice(list,savedName){
 /* ---- voice selection and saved settings ---- */
 var synth=window.speechSynthesis,voices=[],muted=false,STORE="identity-runtime.talk.v1",saved={},pitchAuto=true;
 try{saved=JSON.parse(localStorage.getItem(STORE)||"{}")||{};}catch(e){saved={};}
-function save(){var o=$("voiceSel").options[$("voiceSel").selectedIndex];saved={voice:o&&o.dataset.name||"",rate:$("rate").value,pitch:pitchAuto?"":$("pitch").value,muted:muted};try{localStorage.setItem(STORE,JSON.stringify(saved));}catch(e){}}
+function save(){var o=$("voiceSel").options[$("voiceSel").selectedIndex];saved={voice:o&&o.dataset.name||"",rate:$("rate").value,pitch:pitchAuto?"":$("pitch").value,muted:muted,still:A.paused};try{localStorage.setItem(STORE,JSON.stringify(saved));}catch(e){}}
 var GLABEL={male:"Male",unknown:"Gender unknown",female:"Female"};
 function loadVoices(){
   if(!synth)return;
@@ -770,6 +799,9 @@ $("voiceSel").addEventListener("change",function(){var v=pickedVoice();noteFor(v
 $("testVoice").addEventListener("click",function(){loadVoices();speak("Hello. This is the voice the guide will use for its scripted answers.",true);});
 function setMuted(m){muted=m;var b=$("mute");b.setAttribute("aria-pressed",String(m));b.textContent=m?"Unmute voice":"Mute voice";}
 setMuted(!!saved.muted);
+function setPaused(v){A.paused=v;var b=$("animToggle");b.setAttribute("aria-pressed",String(v));b.textContent=v?"Resume ambient animation":"Pause ambient animation";kick();}
+if(reduce){$("animToggle").disabled=true;$("animToggle").textContent="Ambient animation off";$("animNote").textContent="Off because your device asks for reduced motion. The lips still follow speech.";}
+else{setPaused(!!saved.still);$("animToggle").addEventListener("click",function(){setPaused(!A.paused);save();});}
 $("mute").addEventListener("click",function(){setMuted(!muted);save();if(muted)stopSpeech();});
 $("stop").addEventListener("click",stopSpeech);
 $("reset").addEventListener("click",function(){try{localStorage.removeItem(STORE);}catch(e){}saved={};pitchAuto=true;$("rate").value="0.9";setMuted(false);loadVoices();upd();});
@@ -799,7 +831,7 @@ function answer(e,isFallback,text,html){
   meta.appendChild(b);
   if(e&&e.myth){var my=document.createElement("span");my.textContent="Myth correction.";meta.appendChild(my);}
   if(e&&e.source){var s=document.createElement("span");s.appendChild(document.createTextNode("Source: "));var a=document.createElement("a");a.href=e.source.url;a.textContent=e.source.title;a.rel="noopener";a.target="_blank";s.appendChild(a);meta.appendChild(s);}
-  m.appendChild(meta);
+  m.appendChild(meta);lookAt(m);
   if(!reduce&&synth&&!muted&&canAutoSpeak())typeInto(m.querySelector("p"),t);
   lastAnswer=t;speak(t);
 }
@@ -868,11 +900,11 @@ if(SR){
   var mic=$("mic");mic.hidden=false;
   $("micHint").textContent="Type a question and press Enter, or press Speak a question and talk. Speech recognition is done by your browser.";
   rec.onresult=function(ev){var t="";for(var i=0;i<ev.results.length;i++)t+=ev.results[i][0].transcript;heard=t;$("ask").value=t;};
-  rec.onend=function(){listening=false;mic.setAttribute("aria-pressed","false");mic.textContent="Speak a question";if(heard){var q=heard;heard="";$("ask").value="";ask(q);}};
+  rec.onend=function(){listening=false;A.listening=false;A.browT=0;kick();mic.setAttribute("aria-pressed","false");mic.textContent="Speak a question";if(heard){var q=heard;heard="";$("ask").value="";ask(q);}};
   rec.onerror=function(ev){$("micHint").textContent="Microphone unavailable ("+ev.error+"). You can still type your question.";};
   mic.addEventListener("click",function(){
     if(listening){rec.stop();return;}
-    stopSpeech();heard="";A.browT=.6;kick();
+    stopSpeech();heard="";A.browT=.6;A.listening=true;kick();
     try{rec.start();listening=true;mic.setAttribute("aria-pressed","true");mic.textContent="Listening... press to stop";}catch(err){$("micHint").textContent="Could not start the microphone. You can still type your question.";}
   });
 }else{

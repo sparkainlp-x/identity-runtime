@@ -645,3 +645,20 @@ def test_typewriter_reveal_follows_speech_and_is_instant_otherwise():
     assert "createTreeWalker(p,NodeFilter.SHOW_TEXT)" in ty and "innerHTML" not in ty  # words wrapped as text nodes only
     style = TEMPLATE.read_text(encoding="utf-8").split("<style>")[1].split("</style>")[0]
     assert ".typing .w{opacity:0" in style and ".typing .w.on{opacity:1}" in style
+
+
+def test_idle_animation_is_gentle_pausable_and_off_for_reduced_motion(site):
+    page = (site / "talk.html").read_text(encoding="utf-8")
+    script = page.split("<script>")[1]
+    assert "function idleOn(){return !reduce&&!A.paused&&A.visible&&!document.hidden;}" in script
+    assert "IntersectionObserver" in script and "visibilitychange" in script  # stops when off screen or in a background tab
+    assert "now-A.lastDraw<40" in script  # idle frames throttled
+    assert 'id="animToggle" aria-pressed="false">Pause ambient animation</button>' in page
+    assert "Off because your device asks for reduced motion." in script and '$("animToggle").disabled=true' in script
+    assert "still:A.paused" in script  # the choice is kept with the voice settings
+    assert "A.listening=true" in script and "A.listening=false" in script  # head tilts while the microphone listens
+    assert "lookAt(m)" in script  # eyes go to the new answer bubble
+    # breathing moves the drawn figure only; the AI portrait and the historical photo are never touched
+    assert "aiPortrait" not in script and "sarony" not in script.lower()
+    for new in ["#body", "#neck", "#collar"]:
+        assert re.search(r'<g id="%s"' % new[1:], page), new
