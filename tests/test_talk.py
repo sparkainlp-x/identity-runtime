@@ -630,3 +630,18 @@ def test_topic_map_markup_and_script(site):
         assert needle in script, needle
     labels = re.findall(r'\{id:"(\w+)",label:"([^"]+)"', script)
     assert [l for _, l in labels] == ["Life", "Inventions", "Electricity basics", "Wireless & Wardenclyffe", "Myths & facts", "About this guide"]
+
+
+def test_typewriter_reveal_follows_speech_and_is_instant_otherwise():
+    script = TEMPLATE.read_text(encoding="utf-8").split("<script>")[1]
+    answer_fn = script.split("function answer(")[1].split("\nvar lastAnswer")[0]
+    # only when the answer will be spoken and motion is allowed
+    assert 'if(!reduce&&synth&&!muted&&canAutoSpeak())typeInto(m.querySelector("p"),t);' in answer_fn
+    cap = script.split("function setCaption(")[1].split("\n}")[0]
+    assert "TY.reveal(reduce?text.length:n)" in cap  # driven by the same word timeline as the captions and lips
+    fin = script.split("function finishSpeech(")[1].split("\n}")[0]
+    assert "setCaption(TL.text,TL.text.length)" in fin  # stopping or finishing reveals the whole answer
+    ty = script.split("function typeInto(")[1].split("\n}")[0]
+    assert "createTreeWalker(p,NodeFilter.SHOW_TEXT)" in ty and "innerHTML" not in ty  # words wrapped as text nodes only
+    style = TEMPLATE.read_text(encoding="utf-8").split("<style>")[1].split("</style>")[0]
+    assert ".typing .w{opacity:0" in style and ".typing .w.on{opacity:1}" in style

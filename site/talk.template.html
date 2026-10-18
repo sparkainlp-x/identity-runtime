@@ -63,6 +63,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .msg p{margin:0}
 .msg p mark{background:#5a4a1c;color:#fff3cf;border-radius:.2em;padding:0 .12em;box-shadow:inset 0 -.12em 0 var(--gold)}
 @media (forced-colors:active){.msg p mark{background:Mark;color:MarkText;box-shadow:none}}
+.typing .w{opacity:0;transition:opacity .16s linear}
+.typing .w.on{opacity:1}
+.typing .w.cur{box-shadow:3px 0 0 -1px var(--gold)}
 .msg .meta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.45rem;font-size:.78rem;color:var(--muted)}
 .msg .meta button{padding:.2rem .6rem;font-size:.78rem}
 .thinking{display:flex;gap:.3rem;align-items:center;padding:.65rem .9rem}
@@ -577,7 +580,34 @@ scheduleBlink();
 
 /* ---- speech timeline: boundary events re-sync it, timers drive it when they never fire ---- */
 var capSaid=$("capSaid"),capRest=$("capRest");
+/* ---- typewriter: the answer bubble reveals word by word as the words are spoken. The whole text is in the bubble from the
+   start (screen readers get it at once, the layout does not jump); words only fade in. Instant when nothing is spoken. ---- */
+var TY=null;
+function typeInto(p,text){
+  if(TY)TY.reveal(Infinity);
+  var spans=[],pos=0,walker=document.createTreeWalker(p,NodeFilter.SHOW_TEXT),nodes=[],n;
+  while((n=walker.nextNode()))nodes.push(n);
+  nodes.forEach(function(t){
+    var frag=document.createDocumentFragment();
+    t.nodeValue.split(/(\s+)/).forEach(function(x){
+      if(!x)return;
+      if(/^\s+$/.test(x))frag.appendChild(document.createTextNode(x));
+      else{var sp=document.createElement("span");sp.className="w";sp.textContent=x;spans.push([pos,sp]);frag.appendChild(sp);}
+      pos+=x.length;
+    });
+    t.parentNode.replaceChild(frag,t);
+  });
+  p.classList.add("typing");
+  var ty={text:text,i:0,cur:null,reveal:function(upto){
+    while(this.i<spans.length&&spans[this.i][0]<upto){spans[this.i][1].classList.add("on");this.i++;}
+    if(this.cur)this.cur.classList.remove("cur");
+    if(this.i>=spans.length){p.classList.remove("typing");if(TY===this)TY=null;return;}
+    this.cur=this.i?spans[this.i-1][1]:null;if(this.cur)this.cur.classList.add("cur");
+  }};
+  TY=ty;return ty;
+}
 function setCaption(text,n){
+  if(TY&&TY.text===text)TY.reveal(reduce?text.length:n);
   if(reduce||n>=text.length){capSaid.textContent=text;capRest.textContent="";return;}
   capSaid.textContent=text.slice(0,n);capRest.textContent=text.slice(n);
 }
@@ -770,6 +800,7 @@ function answer(e,isFallback,text,html){
   if(e&&e.myth){var my=document.createElement("span");my.textContent="Myth correction.";meta.appendChild(my);}
   if(e&&e.source){var s=document.createElement("span");s.appendChild(document.createTextNode("Source: "));var a=document.createElement("a");a.href=e.source.url;a.textContent=e.source.title;a.rel="noopener";a.target="_blank";s.appendChild(a);meta.appendChild(s);}
   m.appendChild(meta);
+  if(!reduce&&synth&&!muted&&canAutoSpeak())typeInto(m.querySelector("p"),t);
   lastAnswer=t;speak(t);
 }
 var lastAnswer=D.persona.greeting;
