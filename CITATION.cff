@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below. It is a research prototype: classical, deterministic, standard-library Python, with illustrative and uncalibrated thresholds."
+type: software
+title: "identity-runtime: governed, reversible avatar personalities with leased capabilities"
+version: 0.1.0
+license: AGPL-3.0-only
+repository-code: "https://github.com/sparkainlp-x/identity-runtime"
+url: "https://sparkainlp-x.github.io/identity-runtime/"
+authors:
+  - family-names: "Brisson"
+    given-names: "Jean-François"
+    orcid: "https://orcid.org/0009-0000-9778-5374"
+    affiliation: "Spark AI NLP, Fredericton, New Brunswick, Canada"
+abstract: >-
+  A standard-library Python research prototype that treats an avatar
+  personality as a versioned identity state rather than a file. Uploaded
+  manifests are validated, compiled against a runtime-side capability
+  registry and screened by a deterministic shadow simulation, then wait for
+  human approval (two distinct approvers for tool and safety policy) before
+  they commit. Capabilities are short, revocable leases granted by a person;
+  actions are denied, held for a human or authorised with a proof object
+  recorded in a fail-closed, hash-chained ledger. Committed versions are kept
+  by checksum and can be rolled back. A fixed hierarchy of 61,440 threshold
+  channels ("OES-61440") acts as a transparent tripwire; it is deterministic,
+  not learned, uncalibrated, and not a safety guarantee. Text screening can be
+  bypassed by paraphrase, nothing is executed or sandboxed, and approvals use
+  optional shared-secret HMAC tokens, not public-key signatures. Example
+  personalities include a fictional educational character inspired by Nikola
+  Tesla (1856-1943), not affiliated with Tesla, Inc., and the Sparky the
+  Beaver mascot.
+keywords:
+  - research-software
+  - avatar-governance
+  - capability-leases
+  - human-in-the-loop
+  - audit-ledger
+  - hash-chain
+  - rollback
+  - personality-manifest
+references:
+  - type: software
+    title: "spark-membrane: a fail-closed console that orchestrates pinned OES repositories without merging them"
+    authors:
+      - family-names: "Brisson"
+        given-names: "Jean-François"
+    doi: "10.5281/zenodo.23175490"
