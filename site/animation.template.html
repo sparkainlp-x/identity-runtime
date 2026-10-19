@@ -109,6 +109,12 @@ svg.oes rect.s.trip{stroke:var(--gold);stroke-width:2}
 .companion a{font-size:.8rem}
 .tesla-frame{position:relative;aspect-ratio:1/1;border-radius:.55rem;overflow:hidden;background:#05070d;box-shadow:0 0 0 1px rgba(201,168,76,.65),0 10px 28px rgba(0,0,0,.3)}
 .tesla-frame img{display:block;width:100%;height:100%;object-fit:cover}
+.tesla-frame.webgl-ready img{display:none}
+.tesla-gl{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.tesla-frame.webgl-ready .tesla-gl{display:block}
+.tesla-frame.webgl-ready .tesla-gl:active{cursor:grabbing}
+.tesla-renderer-badge{position:absolute;z-index:3;left:.5rem;bottom:.5rem;padding:.18rem .4rem;border:1px solid rgba(79,209,232,.55);border-radius:.25rem;background:rgba(8,17,39,.78);color:var(--cyan);font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
+.tesla-frame:not(.webgl-ready) .tesla-renderer-badge{display:none}
 .tesla-mouth{position:absolute;left:39.5%;top:44.5%;width:18%;height:3.8%;border-radius:50%;background:rgba(18,5,6,.04);border:1px solid transparent;transform:scaleY(.22);transform-origin:center;transition:transform .12s ease,background .12s ease,border-color .12s ease;pointer-events:none}
 .tesla-mouth::after{content:"";position:absolute;left:16%;right:16%;bottom:-.25rem;height:.18rem;border-radius:50%;background:rgba(232,190,180,.6);opacity:0;transition:opacity .12s ease}
 .tesla-frame.speaking .tesla-mouth{background:rgba(27,7,9,.84);border-color:rgba(232,190,180,.5);animation:tesla-lips .16s ease-in-out infinite alternate}
@@ -158,7 +164,9 @@ footer{max-width:84rem;margin:0 auto;padding:1rem 1.5rem 2rem;color:var(--muted)
 
     <section class="companion" aria-labelledby="hCompanion">
       <div class="tesla-frame" id="teslaFrame">
-        <img src="assets/tesla-realistic-companion.jpg" width="1408" height="1408" alt="Realistic black-and-white portrait of Nikola Tesla in a dark suit, supplied as a visual reference for the fictional educational guide.">
+        <canvas class="tesla-gl" id="teslaGL" aria-label="Interactive WebGL portrait of the fictional Tesla-inspired educational guide. Move the pointer across the portrait to change the lighting and perspective."></canvas>
+        <img id="teslaPortrait" src="assets/tesla-realistic-companion.jpg" width="1408" height="1408" alt="Realistic black-and-white portrait of Nikola Tesla in a dark suit, supplied as a visual reference for the fictional educational guide.">
+        <span class="tesla-renderer-badge">WebGL parallax active</span>
         <span class="tesla-mouth" aria-hidden="true"></span>
       </div>
       <div class="companion-copy">
@@ -170,7 +178,7 @@ footer{max-width:84rem;margin:0 auto;padding:1rem 1.5rem 2rem;color:var(--muted)
           <button type="button" class="primary" id="speakStep" aria-pressed="false">Speak this step</button>
           <a href="talk.html">Open the talking guide</a>
         </div>
-        <p class="small">Synthetic browser voice only — not a recording or imitation of Nikola Tesla. The portrait is supplied by the project author.</p>
+        <p class="small">Move your pointer across the portrait to steer its depth, light, and perspective. Synthetic browser voice only — not a recording or imitation of Nikola Tesla.</p>
       </div>
     </section>
 
@@ -416,6 +424,36 @@ function render(n){
 $("malSummary").textContent="Status: "+D.malicious.status+" at the "+D.malicious.stage+" stage. Nothing was stored as a pending version.";
 D.malicious.errors.forEach(function(e){$("malErrors").appendChild(el("li","mono",e));});
 $("tamSummary").textContent="In a copy of the ledger, line "+D.tampered.line+" ("+D.tampered.field+") was changed from '"+D.tampered.from+"' to '"+D.tampered.to+"'. Verify result: "+(D.tampered.verify.valid?"valid":"invalid")+", reason: "+D.tampered.verify.reason+". A runtime opened on that copy refuses to write.";
+
+/* ---------- lightweight WebGL portrait renderer ---------- */
+function initTeslaWebGL(){
+  var frame=$("teslaFrame"),canvas=$("teslaGL"),image=$("teslaPortrait");
+  var gl=canvas.getContext("webgl",{alpha:false,antialias:true,preserveDrawingBuffer:false});
+  function fallback(){canvas.style.display="none";$("companionStatus").textContent="Static portrait fallback active — WebGL is unavailable on this device.";}
+  if(!gl){fallback();return;}
+  var vs="precision mediump float;attribute vec2 aPosition;attribute vec2 aUv;uniform vec2 uMouse;uniform float uTime;varying vec2 vUv;void main(){float edge=1.0-abs(aPosition.x*aPosition.y);float ripple=sin(aPosition.x*7.0+uTime*0.45)*sin(aPosition.y*6.0-uTime*0.35)*0.018*edge;vec2 p=aPosition;p.x+=uMouse.x*(0.034+0.012*edge)+ripple;p.y+=uMouse.y*(0.028+0.01*edge)+ripple*0.6;gl_Position=vec4(p,0.0,1.0);vUv=aUv+vec2(uMouse.x*0.006*edge,uMouse.y*0.004*edge);}";
+  var fs="precision mediump float;uniform sampler2D uTexture;uniform vec2 uMouse;varying vec2 vUv;void main(){vec4 tex=texture2D(uTexture,clamp(vUv,0.0,1.0));vec2 center=vUv-vec2(0.5,0.5);float rim=1.0-smoothstep(0.18,0.72,length(center));float light=0.92+0.16*rim+0.08*uMouse.x+0.06*uMouse.y;float cyan=max(0.0,uMouse.x)*0.018;gl_FragColor=vec4(tex.rgb*light+vec3(0.31,0.82,0.91)*cyan,1.0);}";
+  function shader(type,source){var s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){if(window.console)console.warn(gl.getShaderInfoLog(s));return null;}return s;}
+  var v=shader(gl.VERTEX_SHADER,vs),f=shader(gl.FRAGMENT_SHADER,fs);if(!v||!f){fallback();return;}
+  var program=gl.createProgram();gl.attachShader(program,v);gl.attachShader(program,f);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS)){if(window.console)console.warn(gl.getProgramInfoLog(program));fallback();return;}gl.useProgram(program);
+  var rows=36,cols=36,positions=[],uvs=[],indices=[];
+  for(var y=0;y<=rows;y++)for(var x=0;x<=cols;x++){positions.push(x/cols*2-1,1-y/rows*2);uvs.push(x/cols,y/rows);}
+  for(var yy=0;yy<rows;yy++)for(var xx=0;xx<cols;xx++){var i=yy*(cols+1)+xx;indices.push(i,i+1,i+cols+1,i+1,i+cols+2,i+cols+1);}
+  function buffer(target,data,type){var b=gl.createBuffer();gl.bindBuffer(target,b);gl.bufferData(target,data,type);return b;}
+  var pb=buffer(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW),ub=buffer(gl.ARRAY_BUFFER,new Float32Array(uvs),gl.STATIC_DRAW),ib=buffer(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices),gl.STATIC_DRAW);
+  var pos=gl.getAttribLocation(program,"aPosition"),texcoord=gl.getAttribLocation(program,"aUv");gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,ub);gl.enableVertexAttribArray(texcoord);gl.vertexAttribPointer(texcoord,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
+  var mouse={x:0,y:0},target={x:0,y:0};
+  function point(e){var r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;target.x=Math.max(-1,Math.min(1,x*2-1));target.y=Math.max(-1,Math.min(1,1-y*2));}
+  canvas.addEventListener("pointermove",point,{passive:true});canvas.addEventListener("pointerleave",function(){target.x=0;target.y=0;},{passive:true});canvas.addEventListener("touchmove",function(e){if(e.touches[0])point(e.touches[0]);},{passive:true});
+  var texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  function upload(){gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);frame.classList.add("webgl-ready");$("companionStatus").textContent="Interactive WebGL renderer active — move across the portrait to steer depth and light.";}
+  if(image.complete)upload();else image.addEventListener("load",upload,{once:true});
+  var uMouse=gl.getUniformLocation(program,"uMouse"),uTime=gl.getUniformLocation(program,"uTime"),uTexture=gl.getUniformLocation(program,"uTexture");gl.uniform1i(uTexture,0);
+  function resize(){var d=Math.min(window.devicePixelRatio||1,2),r=canvas.getBoundingClientRect(),w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}}
+  function draw(ms){resize();mouse.x+=(target.x-mouse.x)*.075;mouse.y+=(target.y-mouse.y)*.075;gl.clearColor(.02,.03,.06,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.uniform2f(uMouse,mouse.x,mouse.y);gl.uniform1f(uTime,ms*.001);gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);requestAnimationFrame(draw);}
+  window.addEventListener("resize",resize,{passive:true});requestAnimationFrame(draw);
+}
+initTeslaWebGL();
 
 /* ---------- playback ---------- */
 var cur=0,timer=null;
