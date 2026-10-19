@@ -40,6 +40,7 @@ TALK_QA = ROOT / "site" / "tesla_qa.json"
 TALK_PLACEHOLDER = "/*TALK_DATA*/"
 PORTRAIT = ROOT / "site" / "assets" / "tesla-sarony-c1890.jpg"
 AI_PORTRAIT = ROOT / "site" / "assets" / "tesla-ai-portrait-512.jpg"
+REALISTIC_COMPANION = ROOT / "site" / "assets" / "tesla-realistic-companion.jpg"
 TALK_SAMPLES = ["who_are_you", "induction_motor", "wardenclyffe", "myth_free_energy", "myth_death_ray"]
 
 
@@ -123,7 +124,7 @@ def build_talk(out_dir: Path) -> Path:
     assert template.count(TALK_PLACEHOLDER) == 1
     assets = out_dir / "assets"
     assets.mkdir(parents=True, exist_ok=True)
-    for asset in (PORTRAIT, AI_PORTRAIT):
+    for asset in (PORTRAIT, AI_PORTRAIT, REALISTIC_COMPANION):
         shutil.copyfile(asset, assets / asset.name)
     entries = json.loads(TALK_QA.read_text(encoding="utf-8"))["entries"]
     by_id = {e["id"]: e for e in entries}
